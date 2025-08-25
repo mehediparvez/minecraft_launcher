@@ -1,0 +1,44 @@
+/**
+ * Configuration for Microsoft Authentication
+ * This file contains the Azure application registration details and required scopes
+ */
+
+const msalConfig = {
+    auth: {
+        clientId: 'YOUR_CLIENT_ID_HERE', // Replace with your authorized client ID from Microsoft
+        authority: 'https://login.microsoftonline.com/consumers',
+        redirectUri: 'https://login.microsoftonline.com/common/oauth2/nativeclient'
+    },
+    cache: {
+        cacheLocation: 'localStorage'
+    },
+    system: {
+        loggerOptions: {
+            loggerCallback: (level, message, containsPii) => {
+                if (!containsPii) {
+                    console.log(message);
+                }
+            },
+            piiLoggingEnabled: false,
+            logLevel: "Info"
+        }
+    }
+};
+
+const xboxLiveConfig = {
+    urlXboxLiveAuth: 'https://user.auth.xboxlive.com/user/authenticate',
+    urlXboxLiveXsts: 'https://xsts.auth.xboxlive.com/xsts/authorize',
+    urlMinecraftAuth: 'https://api.minecraftservices.com/authentication/login_with_xbox'
+};
+
+// Microsoft scopes for authentication
+const loginRequest = {
+    scopes: ["XboxLive.signin"]
+};
+
+// Export configurations
+module.exports = {
+    msalConfig,
+    loginRequest,
+    xboxLiveConfig
+};

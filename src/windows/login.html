@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Login</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+      position: relative;
+    }
+
+    /* Animated background particles */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .particle:nth-child(1) { width: 80px; height: 80px; left: 10%; animation-delay: 0s; }
+    .particle:nth-child(2) { width: 120px; height: 120px; left: 20%; animation-delay: -2s; }
+    .particle:nth-child(3) { width: 60px; height: 60px; left: 70%; animation-delay: -1s; }
+    .particle:nth-child(4) { width: 100px; height: 100px; left: 80%; animation-delay: -3s; }
+    .particle:nth-child(5) { width: 40px; height: 40px; left: 60%; animation-delay: -0.5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+      25% { transform: translateY(-100px) rotate(90deg); opacity: 1; }
+      50% { transform: translateY(-200px) rotate(180deg); opacity: 0.7; }
+      75% { transform: translateY(-100px) rotate(270deg); opacity: 1; }
+    }
+
+    /* Main content */
+    .main-content {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+    }
+
+    .logo-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding-top: 30px;
+      position: absolute;
+      top: 0;
+      z-index: 3;
+    }
+
+    .logo {
+      max-width: 80px;
+      height: auto;
+      filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.4));
+      animation: logoGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes logoGlow {
+      from { filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.4)); }
+      to { filter: drop-shadow(0 8px 16px rgba(147, 197, 253, 0.6)); }
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      padding-top: 80px;
+    }
+
+    .login-card {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 20px;
+      padding: 30px 25px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      transform: translateY(20px);
+      opacity: 0;
+      animation: slideUp 0.8s ease-out 0.3s forwards;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    @keyframes slideUp {
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .input-container {
+      position: relative;
+      width: 240px;
+      margin: 15px 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 18px;
+      border: none;
+      border-radius: 14px;
+      background: rgba(30, 41, 59, 0.6);
+      color: #e2e8f0;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+    }
+
+    input::placeholder {
+      color: rgba(226, 232, 240, 0.5);
+    }
+
+    input:focus {
+      background: rgba(30, 41, 59, 0.8);
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      transform: translateY(-2px);
+    }
+
+    input.invalid {
+      box-shadow: 0 0 20px rgba(255, 100, 100, 0.5);
+      border: 1px solid rgba(255, 100, 100, 0.7);
+      background: rgba(255, 100, 100, 0.1);
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .alert {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255, 100, 100, 0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 100, 100, 0.3);
+      border-radius: 12px;
+      color: #ffcccb;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      opacity: 0;
+      transform: translateY(10px) scale(0.95);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .alert.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    button {
+      width: 240px;
+      padding: 14px 20px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(59, 130, 246, 0.5);
+    }
+
+    button:hover:not(:disabled)::before {
+      opacity: 1;
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      background: rgba(51, 65, 85, 0.5);
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .button-text {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Welcome text */
+    .welcome-text {
+      text-align: center;
+      margin-bottom: 25px;
+      opacity: 0;
+      animation: fadeIn 1s ease-out 0.6s forwards;
+    }
+
+    .welcome-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .welcome-subtitle {
+      font-size: 0.9rem;
+      color: rgba(226, 232, 240, 0.7);
+      font-weight: 400;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    
+    /* Microsoft login button */
+    .msft-login-btn {
+      background: #ffffff;
+      color: #000000;
+      margin-bottom: 15px;
+      position: relative;
+      font-weight: 500;
+    }
+    
+    .msft-login-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #f0f0f0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .msft-login-btn:hover:not(:disabled) {
+      box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+    }
+    
+    .msft-login-btn:hover:not(:disabled)::before {
+      opacity: 1;
+    }
+    
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      color: rgba(226, 232, 240, 0.5);
+      font-size: 0.8rem;
+      margin: 15px 0;
+      width: 240px;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.2);
+    }
+    
+    .divider::before {
+      margin-right: 10px;
+    }
+    
+    .divider::after {
+      margin-left: 10px;
+    }
+
+    /* Responsive design */
+    @media (max-width: 480px) {
+      .login-card {
+        margin: 20px;
+        padding: 25px 18px;
+      }
+      
+      .input-container, button {
+        width: 100%;
+        max-width: 240px;
+      }
+      
+      .welcome-title {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <div class="main-content">
+    <div class="logo-container">
+      <img src="aimg/logo.png" alt="Logo" class="logo" />
+    </div>
+
+    <div class="container">
+      <div class="login-card">
+        <div class="welcome-text">
+          <h1 class="welcome-title">Hi!</h1>
+          <p class="welcome-subtitle">Sign in to Void Client</p>
+        </div>
+        
+        <!-- Microsoft Sign In Button -->
+        <button id="msftLoginBtn" class="msft-login-btn">
+          <span class="button-text">Sign in with Microsoft</span>
+        </button>
+        
+        <div class="divider">
+          <span>or play offline</span>
+        </div>
+        
+        <div class="input-container">
+          <div id="alert" class="alert"></div>
+          <input id="nickInput" type="text" placeholder="Username" autocomplete="off" />
+        </div>
+        <button id="startBtn" disabled>
+          <span class="button-text">Play Offline</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    const nickInput = document.getElementById('nickInput');
+    const startBtn = document.getElementById('startBtn');
+    const msftLoginBtn = document.getElementById('msftLoginBtn');
+    const alert = document.getElementById('alert');
+
+    function validateUsername(username) {
+      // Check length
+      if (username.length < 3) {
+        return 'Username must be at least 3 characters';
+      }
+      if (username.length > 15) {
+        return 'Username must be less than 15 characters';
+      }
+      
+      // Check allowed characters (letters, numbers, underscores)
+      const validPattern = /^[a-zA-Z0-9_]+$/;
+      if (!validPattern.test(username)) {
+        return 'Only letters, numbers and underscores allowed';
+      }
+      
+      return null; // Valid
+    }
+
+    function showAlert(message) {
+      alert.textContent = message;
+      alert.classList.add('show');
+      nickInput.classList.add('invalid');
+    }
+
+    function hideAlert() {
+      alert.classList.remove('show');
+      nickInput.classList.remove('invalid');
+    }
+
+    nickInput.addEventListener('input', () => {
+      const username = nickInput.value.trim();
+      
+      if (username === '') {
+        hideAlert();
+        startBtn.disabled = true;
+        console.log('Input empty, button disabled');
+        return;
+      }
+      
+      const validationError = validateUsername(username);
+      
+      if (validationError) {
+        showAlert(validationError);
+        startBtn.disabled = true;
+        console.log('Validation error:', validationError, 'button disabled');
+      } else {
+        hideAlert();
+        startBtn.disabled = false;
+        console.log('Username valid:', username, 'button enabled');
+      }
+    });
+
+    // Add enter key support
+    nickInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !startBtn.disabled) {
+        startBtn.click();
+      }
+    });
+
+    startBtn.addEventListener('click', () => {
+      const username = nickInput.value.trim();
+      const validationError = validateUsername(username);
+      
+      if (!validationError) {
+        // Add a subtle animation before transitioning
+        startBtn.style.transform = 'scale(0.95)';
+        startBtn.disabled = true;
+        startBtn.querySelector('.button-text').textContent = 'Logging in...';
+        
+        setTimeout(() => {
+          console.log('Sending offline login request with username:', username);
+          ipcRenderer.send('open-second-window', username);
+        }, 150);
+      }
+    });
+
+    // Function to handle Xbox account setup
+    function openXboxSetup() {
+      const { shell } = require('electron');
+      shell.openExternal('https://www.xbox.com/en-US/live/');
+      showAlert('Please create an Xbox profile, then try signing in again');
+    }
+    
+    // Microsoft login button
+    msftLoginBtn.addEventListener('click', async () => {
+      // Disable button and show loading state
+      msftLoginBtn.disabled = true;
+      msftLoginBtn.querySelector('.button-text').textContent = 'Connecting...';
+      
+      try {
+        // Call the Microsoft login process
+        const result = await ipcRenderer.invoke('minecraft:login');
+        
+        if (result.success) {
+          // Success - open main window with the profile name
+          ipcRenderer.send('open-second-window', result.profile.name);
+        } else {
+          // Check if it's an Xbox profile error
+          if (result.error && result.error.includes('does not have an Xbox profile')) {
+            showAlert('You need to create an Xbox profile first');
+            
+            // Create "Create Xbox Profile" button
+            const xboxProfileBtn = document.createElement('button');
+            xboxProfileBtn.className = 'xbox-profile-btn';
+            xboxProfileBtn.innerHTML = '<span class="button-text">Create Xbox Profile</span>';
+            xboxProfileBtn.style.marginTop = '10px';
+            xboxProfileBtn.style.background = '#107C10'; // Xbox green
+            
+            // Remove any existing button
+            const existingBtn = document.querySelector('.xbox-profile-btn');
+            if (existingBtn) {
+              existingBtn.remove();
+            }
+            
+            // Add button after Microsoft login button
+            msftLoginBtn.parentNode.insertBefore(xboxProfileBtn, msftLoginBtn.nextSibling);
+            
+            // Add click handler
+            xboxProfileBtn.addEventListener('click', openXboxSetup);
+          } else {
+            // Other error
+            showAlert(result.error || 'Failed to authenticate with Microsoft');
+          }
+          
+          msftLoginBtn.disabled = false;
+          msftLoginBtn.querySelector('.button-text').textContent = 'Sign in with Microsoft';
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        showAlert('Authentication failed. Please try again.');
+        msftLoginBtn.disabled = false;
+        msftLoginBtn.querySelector('.button-text').textContent = 'Sign in with Microsoft';
+      }
+    });
+    
+    // Add focus to input when page loads
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        nickInput.focus();
+      }, 800);
+    });
+    
+    // Check if we're running in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    console.log('Running in', isDev ? 'development' : 'production', 'mode');
+    console.log('Platform:', process.platform);
+    console.log('Architecture:', process.arch);
+  </script>
+</body>
+</html>

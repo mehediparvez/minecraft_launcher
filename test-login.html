@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 15px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Test Login Functionality</h1>
+  
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" placeholder="Enter username">
+  </div>
+  
+  <button id="loginBtn">Login</button>
+  
+  <div id="status">Status messages will appear here...</div>
+
+  <script>
+    // Test script to debug offline login
+    const { ipcRenderer } = require('electron');
+    
+    const usernameInput = document.getElementById('username');
+    const loginBtn = document.getElementById('loginBtn');
+    const statusDiv = document.getElementById('status');
+    
+    function updateStatus(message) {
+      statusDiv.textContent = message;
+      console.log(message);
+    }
+    
+    loginBtn.addEventListener('click', () => {
+      const username = usernameInput.value.trim();
+      
+      if (!username) {
+        updateStatus('Please enter a username');
+        return;
+      }
+      
+      updateStatus(`Attempting to log in as: ${username}`);
+      
+      // Direct IPC call to test
+      try {
+        ipcRenderer.send('open-second-window', username);
+        updateStatus(`Sent login request for: ${username}`);
+      } catch (error) {
+        updateStatus(`Error sending IPC message: ${error.message}`);
+      }
+    });
+    
+    // Log all IPC events for debugging
+    const originalSend = ipcRenderer.send;
+    ipcRenderer.send = function(...args) {
+      updateStatus(`IPC Send: ${args[0]} with params: ${JSON.stringify(args.slice(1))}`);
+      return originalSend.apply(this, args);
+    };
+  </script>
+</body>
+</html>

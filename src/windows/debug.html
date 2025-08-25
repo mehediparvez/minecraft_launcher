@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Void Client - Debug</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    h1 {
+      color: #4CAF50;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .card {
+      background-color: #2d2d2d;
+      border-radius: 5px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    pre {
+      background-color: #000;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+      color: #4CAF50;
+    }
+    
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    
+    .success {
+      background-color: rgba(76, 175, 80, 0.3);
+      border: 1px solid #4CAF50;
+    }
+    
+    .error {
+      background-color: rgba(244, 67, 54, 0.3);
+      border: 1px solid #F44336;
+    }
+    
+    .warning {
+      background-color: rgba(255, 152, 0, 0.3);
+      border: 1px solid #FF9800;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Void Client - Debug Panel</h1>
+    
+    <div class="card">
+      <h2>Authentication</h2>
+      <button id="btnTestOffline">Test Offline Authentication</button>
+      <button id="btnTestMicrosoft">Test Microsoft Authentication</button>
+      <div id="authStatus" class="status"></div>
+    </div>
+    
+    <div class="card">
+      <h2>File System</h2>
+      <button id="btnCheckFiles">Check Required Files</button>
+      <button id="btnCreateTestFiles">Create Test Files</button>
+      <div id="filesStatus" class="status"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Java</h2>
+      <button id="btnCheckJava">Check Java Installation</button>
+      <div id="javaStatus" class="status"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Minecraft</h2>
+      <button id="btnCheckOwnership">Check Game Ownership</button>
+      <button id="btnGetAuthStatus">Get Auth Status</button>
+      <div id="minecraftStatus" class="status"></div>
+    </div>
+    
+    <div class="card">
+      <h2>System Info</h2>
+      <button id="btnSystemInfo">Get System Info</button>
+      <pre id="systemInfo"></pre>
+    </div>
+    
+    <div class="card">
+      <h2>Logs</h2>
+      <button id="btnClearLogs">Clear Logs</button>
+      <pre id="logs"></pre>
+    </div>
+  </div>
+  
+  <script>
+    const { ipcRenderer } = require('electron');
+    const fs = require('fs');
+    const path = require('path');
+    const os = require('os');
+    const { execSync } = require('child_process');
+    
+    // Elements
+    const authStatus = document.getElementById('authStatus');
+    const filesStatus = document.getElementById('filesStatus');
+    const javaStatus = document.getElementById('javaStatus');
+    const systemInfoElem = document.getElementById('systemInfo');
+    const logsElem = document.getElementById('logs');
+    
+    // Log function
+    function log(message) {
+      console.log(message);
+      logsElem.textContent += message + '\n';
+      logsElem.scrollTop = logsElem.scrollHeight;
+    }
+    
+    // Test offline authentication
+    document.getElementById('btnTestOffline').addEventListener('click', () => {
+      try {
+        const testUser = 'debug_user';
+        log(`Testing offline login with username: ${testUser}`);
+        authStatus.textContent = `Attempting offline login with username: ${testUser}`;
+        authStatus.className = 'status warning';
+        
+        // Send IPC to main process
+        ipcRenderer.send('open-second-window', testUser);
+        
+        // Update status (since we can't get result back easily)
+        authStatus.textContent = `Offline login request sent for username: ${testUser}`;
+        authStatus.className = 'status success';
+      } catch (error) {
+        log(`Error in offline login: ${error.message}`);
+        authStatus.textContent = `Error: ${error.message}`;
+        authStatus.className = 'status error';
+      }
+    });
+    
+    // Test Microsoft authentication
+    document.getElementById('btnTestMicrosoft').addEventListener('click', async () => {
+      try {
+        log('Testing Microsoft authentication');
+        const authStatusElement = document.getElementById('authStatus');
+        authStatusElement.textContent = 'Initiating Microsoft authentication flow...';
+        authStatusElement.className = 'status warning';
+        
+        // First check if we're already authenticated
+        const currentAuthStatus = await ipcRenderer.invoke('minecraft:debug:getStatus');
+        if (currentAuthStatus.isAuthenticated) {
+          log(`Already authenticated as: ${currentAuthStatus.account?.username || 'Unknown user'}`);
+          log(`Token expires: ${currentAuthStatus.tokenExpiry || 'Unknown'}`);
+          
+          const confirm = window.confirm('Already authenticated. Do you want to try logging in again?');
+          if (!confirm) {
+            authStatusElement.textContent = `Already authenticated as: ${currentAuthStatus.account?.username || 'Unknown user'}`;
+            authStatusElement.className = 'status success';
+            return;
+          }
+        }
+        
+        const result = await ipcRenderer.invoke('minecraft:login');
+        if (result.success) {
+          log(`Microsoft login successful: ${JSON.stringify(result.profile)}`);
+          authStatusElement.textContent = `Login successful: ${result.profile.name}`;
+          authStatusElement.className = 'status success';
+        } else {
+          log(`Microsoft login failed: ${result.error}`);
+          authStatusElement.textContent = `Login failed: ${result.error}`;
+          authStatusElement.className = 'status error';
+        }
+      } catch (error) {
+        log(`Error in Microsoft login: ${error.message}`);
+        const authStatusElement = document.getElementById('authStatus');
+        authStatusElement.textContent = `Error: ${error.message}`;
+        authStatusElement.className = 'status error';
+      }
+    });
+    
+    // Check required files
+    document.getElementById('btnCheckFiles').addEventListener('click', () => {
+      try {
+        log('Checking required files and directories');
+        filesStatus.textContent = 'Checking files...';
+        filesStatus.className = 'status warning';
+        
+        const requiredDirs = [
+          './minecraft',
+          './minecraft/mods',
+          './minecraft/versions'
+        ];
+        
+        let issues = [];
+        
+        // Check directories
+        requiredDirs.forEach(dir => {
+          if (!fs.existsSync(dir)) {
+            log(`Directory missing: ${dir}`);
+            issues.push(`Directory missing: ${dir}`);
+          }
+        });
+        
+        // Check launcher_config.json
+        const configPath = './minecraft/launcher_config.json';
+        if (!fs.existsSync(configPath)) {
+          log(`Config file missing: ${configPath}`);
+          issues.push(`Config file missing: ${configPath}`);
+        } else {
+          try {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            log(`Config loaded: ${JSON.stringify(config)}`);
+          } catch (e) {
+            log(`Invalid config: ${e.message}`);
+            issues.push(`Invalid config: ${e.message}`);
+          }
+        }
+        
+        // Update status
+        if (issues.length === 0) {
+          filesStatus.textContent = 'All required files and directories present';
+          filesStatus.className = 'status success';
+        } else {
+          filesStatus.textContent = `Issues found:\n${issues.join('\n')}`;
+          filesStatus.className = 'status error';
+        }
+      } catch (error) {
+        log(`Error checking files: ${error.message}`);
+        filesStatus.textContent = `Error: ${error.message}`;
+        filesStatus.className = 'status error';
+      }
+    });
+    
+    // Create test files
+    document.getElementById('btnCreateTestFiles').addEventListener('click', () => {
+      try {
+        log('Creating test files and directories');
+        filesStatus.textContent = 'Creating test files...';
+        filesStatus.className = 'status warning';
+        
+        // Create directories
+        const dirs = [
+          './minecraft',
+          './minecraft/mods',
+          './minecraft/versions',
+          './minecraft/versions/1.21.1-fabric',
+          './minecraft/versions/1.8.9-fabric'
+        ];
+        
+        dirs.forEach(dir => {
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+            log(`Created directory: ${dir}`);
+          }
+        });
+        
+        // Create config file
+        const configPath = './minecraft/launcher_config.json';
+        const configData = {
+          username: 'debug_user',
+          lastLogin: new Date().toISOString(),
+          autoLogin: true,
+          lastUsedVersion: '1.21.1'
+        };
+        
+        fs.writeFileSync(configPath, JSON.stringify(configData, null, 2));
+        log(`Created config file: ${configPath}`);
+        
+        // Create version JSON files
+        const version121Path = './minecraft/versions/1.21.1-fabric/1.21.1-fabric.json';
+        const version18Path = './minecraft/versions/1.8.9-fabric/1.8.9-fabric.json';
+        
+        // Sample version files (minimal)
+        const version121Data = {
+          id: '1.21.1-fabric',
+          inheritsFrom: '1.21.1',
+          type: 'release'
+        };
+        
+        const version18Data = {
+          id: '1.8.9-fabric',
+          inheritsFrom: '1.8.9',
+          type: 'release'
+        };
+        
+        fs.writeFileSync(version121Path, JSON.stringify(version121Data, null, 2));
+        fs.writeFileSync(version18Path, JSON.stringify(version18Data, null, 2));
+        
+        log(`Created version files`);
+        
+        filesStatus.textContent = 'Test files created successfully';
+        filesStatus.className = 'status success';
+      } catch (error) {
+        log(`Error creating test files: ${error.message}`);
+        filesStatus.textContent = `Error: ${error.message}`;
+        filesStatus.className = 'status error';
+      }
+    });
+    
+    // Check Java
+    document.getElementById('btnCheckJava').addEventListener('click', async () => {
+      try {
+        log('Checking Java installation');
+        javaStatus.textContent = 'Checking Java...';
+        javaStatus.className = 'status warning';
+        
+        const result = await ipcRenderer.invoke('debug:checkJava');
+        
+        if (result.success) {
+          log('Java check complete');
+          
+          let statusHTML = '';
+          
+          // System Java
+          if (result.systemJava) {
+            statusHTML += `<p><strong>System Java:</strong></p>`;
+            statusHTML += `<p>Path: ${result.systemJava.path}</p>`;
+            statusHTML += `<p>Version: ${result.systemJava.version}</p>`;
+            statusHTML += `<hr>`;
+          } else {
+            statusHTML += `<p><strong>System Java:</strong> Not found</p>`;
+            statusHTML += `<hr>`;
+          }
+          
+          // Bundled Java
+          if (result.bundledJavas && result.bundledJavas.length > 0) {
+            statusHTML += `<p><strong>Bundled Java:</strong></p>`;
+            result.bundledJavas.forEach((java, index) => {
+              statusHTML += `<p><strong>Option ${index + 1}:</strong></p>`;
+              statusHTML += `<p>Path: ${java.path}</p>`;
+              if (java.version) {
+                statusHTML += `<p>Version: ${java.version}</p>`;
+              } else if (java.error) {
+                statusHTML += `<p>Error: ${java.error}</p>`;
+              }
+              statusHTML += `<br>`;
+            });
+          } else {
+            statusHTML += `<p><strong>Bundled Java:</strong> None found</p>`;
+          }
+          
+          // Recommended
+          if (result.recommended) {
+            statusHTML += `<hr><p><strong>Recommended Java:</strong> ${result.recommended.path}</p>`;
+          } else {
+            statusHTML += `<hr><p><strong>Recommended Java:</strong> None available!</p>`;
+          }
+          
+          javaStatus.innerHTML = statusHTML;
+          javaStatus.className = result.recommended ? 'status success' : 'status error';
+        } else {
+          log(`Java check failed: ${result.error}`);
+          javaStatus.textContent = `Error: ${result.error}`;
+          javaStatus.className = 'status error';
+        }
+      } catch (error) {
+        log(`Error checking Java: ${error.message}`);
+        javaStatus.textContent = `Error: ${error.message}`;
+        javaStatus.className = 'status error';
+      }
+    });
+    
+    // Get system info
+    document.getElementById('btnSystemInfo').addEventListener('click', () => {
+      try {
+        const info = {
+          platform: process.platform,
+          arch: process.arch,
+          nodeVersion: process.version,
+          electronVersion: process.versions.electron,
+          chromeVersion: process.versions.chrome,
+          totalMemory: `${Math.round(os.totalmem() / (1024 * 1024 * 1024))} GB`,
+          freeMemory: `${Math.round(os.freemem() / (1024 * 1024 * 1024))} GB`,
+          cpus: `${os.cpus().length} x ${os.cpus()[0].model}`,
+          userDataPath: process.resourcesPath,
+          homeDir: os.homedir(),
+          tmpDir: os.tmpdir(),
+          hostname: os.hostname()
+        };
+        
+        systemInfoElem.textContent = JSON.stringify(info, null, 2);
+      } catch (error) {
+        log(`Error getting system info: ${error.message}`);
+        systemInfoElem.textContent = `Error: ${error.message}`;
+      }
+    });
+    
+    // Check game ownership
+    document.getElementById('btnCheckOwnership').addEventListener('click', async () => {
+      try {
+        log('Checking Minecraft ownership');
+        const minecraftStatus = document.getElementById('minecraftStatus');
+        minecraftStatus.textContent = 'Checking Minecraft ownership...';
+        minecraftStatus.className = 'status warning';
+        
+        const result = await ipcRenderer.invoke('debug:checkOwnership');
+        if (result.success) {
+          if (result.ownsGame) {
+            log('User owns Minecraft');
+            minecraftStatus.textContent = 'User owns Minecraft ✓';
+            minecraftStatus.className = 'status success';
+          } else {
+            log('User does NOT own Minecraft');
+            minecraftStatus.textContent = 'User does NOT own Minecraft ✗';
+            minecraftStatus.className = 'status error';
+          }
+        } else {
+          log(`Error checking ownership: ${result.error}`);
+          minecraftStatus.textContent = `Error: ${result.error}`;
+          minecraftStatus.className = 'status error';
+        }
+      } catch (error) {
+        log(`Error checking ownership: ${error.message}`);
+        document.getElementById('minecraftStatus').textContent = `Error: ${error.message}`;
+        document.getElementById('minecraftStatus').className = 'status error';
+      }
+    });
+    
+    // Get auth status
+    document.getElementById('btnGetAuthStatus').addEventListener('click', async () => {
+      try {
+        log('Getting authentication status');
+        const minecraftStatus = document.getElementById('minecraftStatus');
+        minecraftStatus.textContent = 'Getting authentication status...';
+        minecraftStatus.className = 'status warning';
+        
+        const result = await ipcRenderer.invoke('minecraft:debug:getStatus');
+        log(`Authentication status: ${JSON.stringify(result, null, 2)}`);
+        
+        if (result.isAuthenticated) {
+          minecraftStatus.innerHTML = `
+            <p><strong>Authentication Status:</strong> Authenticated ✓</p>
+            <p><strong>Provider:</strong> ${result.authProvider}</p>
+            <p><strong>User:</strong> ${result.account ? result.account.username : 'Unknown'}</p>
+            <p><strong>Token Expires:</strong> ${result.tokenExpiry || 'Unknown'}</p>
+          `;
+          minecraftStatus.className = 'status success';
+        } else {
+          minecraftStatus.innerHTML = `
+            <p><strong>Authentication Status:</strong> Not Authenticated ✗</p>
+            <p><strong>Provider:</strong> ${result.authProvider}</p>
+          `;
+          minecraftStatus.className = 'status warning';
+        }
+      } catch (error) {
+        log(`Error getting auth status: ${error.message}`);
+        document.getElementById('minecraftStatus').textContent = `Error: ${error.message}`;
+        document.getElementById('minecraftStatus').className = 'status error';
+      }
+    });
+    
+    // Clear logs
+    document.getElementById('btnClearLogs').addEventListener('click', () => {
+      logsElem.textContent = '';
+    });
+    
+    // Initial log
+    log(`Debug panel loaded - ${new Date().toISOString()}`);
+    log(`Platform: ${process.platform}, Arch: ${process.arch}`);
+  </script>
+</body>
+</html>

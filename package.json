@@ -1,0 +1,113 @@
+{
+  "name": "void-client",
+  "version": "1.0.0",
+  "description": "Minecraft launcher with Microsoft authentication",
+  "main": "./src/index.js",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.voidclient.app",
+    "productName": "Void Client",
+    "files": [
+      "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!node_modules/*.d.ts",
+      "!node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{.travis,.jenkins,.appveyor,tsconfig.json,tsconfig.esm.json,webpack.config.js}",
+      "**/*",
+      "!dev-resources${/*}",
+      "!dev-workspace${/*}"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/app.asar.unpacked/files",
+        "to": "app.asar.unpacked/files",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "resources/app.asar.unpacked/java",
+        "to": "app.asar.unpacked/java",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "java/**/*",
+      "files/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.games"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Game"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "dependencies": {
+    "@azure/msal-node": "^3.7.2",
+    "keytar": "^7.9.0",
+    "minecraft-launcher-core": "^3.16.18",
+    "node-fetch": "^2.6.7",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "electron": "^29.4.6",
+    "electron-builder": "^24.13.3"
+  }
+}

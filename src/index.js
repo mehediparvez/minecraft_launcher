@@ -1,0 +1,417 @@
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const { minecraftAuth } = require('./auth');
+
+let loginWindow;
+let mainWindow;
+
+function loadUserConfig() {
+  const configFile = path.join('./minecraft', 'launcher_config.json');
+  
+  try {
+    if (fs.existsSync(configFile)) {
+      const configData = fs.readFileSync(configFile, 'utf8');
+      const config = JSON.parse(configData);
+      
+      if (config.username && config.autoLogin) {
+        return config.username;
+      }
+    }
+  } catch (error) {
+  }
+  
+  return null;
+}
+
+function createLoginWindow() {
+  loginWindow = new BrowserWindow({
+    width: 400,
+    height: 600,
+    webPreferences: {
+      contextIsolation: false,
+      nodeIntegration: true,
+    },
+    frame: false,
+    resizable: false,
+  });
+  
+  loginWindow.loadFile(path.join(__dirname, 'windows/login.html'));
+  
+  loginWindow.on('closed', () => {
+    loginWindow = null;
+  });
+}
+
+function createMainWindow(userNick) {
+  mainWindow = new BrowserWindow({
+    width: 1000,
+    height: 600,
+    webPreferences: {
+      contextIsolation: false,
+      nodeIntegration: true,
+    },
+    frame: false,
+    resizable: false,
+  });
+  
+  mainWindow.loadFile(path.join(__dirname, 'windows/index.html'));
+  
+  // Enable developer tools in development
+  if (process.env.NODE_ENV === 'development' || process.argv.includes('--debug')) {
+    mainWindow.webContents.openDevTools();
+  }
+  
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('set-user', userNick);
+  });
+  
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+  
+  // Register debug shortcut (Ctrl+Shift+D)
+  const { globalShortcut } = require('electron');
+  globalShortcut.register('CommandOrControl+Shift+D', () => {
+    createDebugWindow();
+  });
+  
+  // Register dev tools shortcut (F12)
+  globalShortcut.register('F12', () => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.toggleDevTools();
+    }
+  });
+}
+
+// Create the debug window
+function createDebugWindow() {
+  const debugWindow = new BrowserWindow({
+    width: 900,
+    height: 700,
+    webPreferences: {
+      contextIsolation: false,
+      nodeIntegration: true,
+    },
+    title: "Void Client - Debug Panel"
+  });
+  
+  debugWindow.loadFile(path.join(__dirname, 'windows/debug.html'));
+  
+  debugWindow.on('closed', () => {
+    // Remove from menu when closed
+    updateMenu(false);
+  });
+  
+  // Don't show in taskbar on Windows
+  // debugWindow.setSkipTaskbar(true);
+}
+
+// Create application menu with debug option
+function updateMenu(hasDebugWindow = false) {
+  const debugMenu = {
+    label: 'Debug',
+    submenu: [
+      {
+        label: 'Open Debug Panel',
+        click: () => createDebugWindow(),
+        enabled: !hasDebugWindow
+      },
+      { type: 'separator' },
+      {
+        label: 'Reload Application',
+        click: () => {
+          app.relaunch();
+          app.exit();
+        }
+      },
+      {
+        label: 'Toggle Developer Tools',
+        accelerator: process.platform === 'darwin' ? 'Alt+Command+I' : 'Ctrl+Shift+I',
+        click: (item, focusedWindow) => {
+          if (focusedWindow) {
+            focusedWindow.webContents.toggleDevTools();
+          }
+        }
+      }
+    ]
+  };
+  
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Quit',
+          accelerator: process.platform === 'darwin' ? 'Command+Q' : 'Ctrl+Q',
+          click: () => app.quit()
+        }
+      ]
+    },
+    debugMenu
+  ];
+  
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
+app.whenReady().then(async () => {
+  // Initialize Microsoft Auth
+  await minecraftAuth.init();
+  
+  // Create menu
+  updateMenu(false);
+  
+  // Always start with login window for user choice
+  createLoginWindow();
+  
+  // Comment out auto-login behavior
+  /*
+  const savedUser = loadUserConfig();
+  
+  // Try to load Microsoft auth profile first
+  const profile = await minecraftAuth.loadSavedCredentials();
+  
+  if (profile) {
+    // User already authenticated with Microsoft
+    createMainWindow(profile.name);
+  } else if (savedUser) {
+    // Fallback to saved offline user
+    createMainWindow(savedUser);
+  } else {
+    createLoginWindow();
+  }
+  */
+  
+  ipcMain.on('open-second-window', (event, userNick) => {
+    console.log('open-second-window event received with username:', userNick);
+    if (loginWindow) {
+      loginWindow.close();
+      loginWindow = null;
+    }
+    createMainWindow(userNick);
+  });
+  ipcMain.on('show-login-window', () => {
+    if (mainWindow) {
+      mainWindow.close();
+      mainWindow = null;
+    }
+    createLoginWindow();
+  });
+  
+  ipcMain.on('logout-user', () => {
+    if (mainWindow) {
+      mainWindow.close();
+      mainWindow = null;
+    }
+    
+    createLoginWindow();
+  });
+  
+  ipcMain.on('minimize-window', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.minimize();
+    } else if (loginWindow && !loginWindow.isDestroyed()) {
+      loginWindow.minimize();
+    }
+  });
+  
+  ipcMain.on('close-window', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.close();
+    } else if (loginWindow && !loginWindow.isDestroyed()) {
+      loginWindow.close();
+    }
+  });
+  
+  ipcMain.on('restart-app', () => {
+    app.relaunch();
+    app.exit();
+  });
+  
+  // Debug IPC handlers
+  ipcMain.on('debug:open', () => {
+    createDebugWindow();
+  });
+  
+  ipcMain.handle('debug:getEnv', () => {
+    return {
+      platform: process.platform,
+      arch: process.arch,
+      versions: process.versions,
+      execPath: process.execPath,
+      resourcesPath: process.resourcesPath,
+      appPath: app.getAppPath(),
+      userDataPath: app.getPath('userData'),
+      tempPath: app.getPath('temp'),
+      isPackaged: app.isPackaged
+    };
+  });
+  
+  ipcMain.handle('debug:testLogin', async (event, username) => {
+    try {
+      if (username) {
+        // Test offline login
+        return { 
+          success: true, 
+          profile: minecraftAuth.getOfflineProfile(username),
+          mode: 'offline'
+        };
+      } else {
+        // Test Microsoft login
+        const profile = await minecraftAuth.login();
+        return { 
+          success: true, 
+          profile,
+          mode: 'microsoft'
+        };
+      }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.message,
+        mode: username ? 'offline' : 'microsoft'
+      };
+    }
+  });
+  
+  ipcMain.handle('debug:checkJava', async () => {
+    const { exec } = require('child_process');
+    const util = require('util');
+    const execAsync = util.promisify(exec);
+    
+    try {
+      // Check system Java
+      let systemJava = null;
+      try {
+        let javaPath = '';
+        if (process.platform === 'win32') {
+          const { stdout } = await execAsync('where java');
+          javaPath = stdout.trim().split('\n')[0];
+        } else {
+          const { stdout } = await execAsync('which java');
+          javaPath = stdout.trim();
+        }
+        
+        if (javaPath) {
+          const { stdout } = await execAsync(`"${javaPath}" -version 2>&1`);
+          systemJava = {
+            path: javaPath,
+            version: stdout.trim()
+          };
+        }
+      } catch (e) {
+        console.log('System Java not found:', e.message);
+      }
+      
+      // Check bundled Java - look in multiple locations
+      const javaPathsToCheck = [
+        // Current working directory (dev-workspace)
+        path.join(process.cwd(), 'java', 'java21', 'bin'),
+        path.join(process.cwd(), 'java', 'java8', 'bin'),
+        
+        // Relative to the main script
+        path.join(__dirname, 'java', 'java21', 'bin'),
+        path.join(__dirname, 'java', 'java8', 'bin'),
+        
+        // In the dev workspace from src directory
+        path.join(__dirname, '..', 'java', 'java21', 'bin'),
+        path.join(__dirname, '..', 'java', 'java8', 'bin'),
+        
+        // Packaged app locations
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'java', 'java21', 'bin'),
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'java', 'java8', 'bin')
+      ];
+      
+      const bundledJavas = [];
+      
+      console.log('Debug: Checking Java paths...');
+      console.log('Current working directory:', process.cwd());
+      console.log('Script directory (__dirname):', __dirname);
+      console.log('Resources path:', process.resourcesPath);
+      
+      for (const javaBasePath of javaPathsToCheck) {
+        const javaExeName = process.platform === 'win32' ? 'javaw.exe' : 'java';
+        const javaPath = path.join(javaBasePath, javaExeName);
+        
+        console.log(`Checking: ${javaPath}`);
+        
+        if (fs.existsSync(javaPath)) {
+          console.log(`✅ Found Java at: ${javaPath}`);
+          try {
+            const { stdout } = await execAsync(`"${javaPath}" -version 2>&1`);
+            bundledJavas.push({
+              path: javaPath,
+              version: stdout.trim()
+            });
+          } catch (e) {
+            bundledJavas.push({
+              path: javaPath,
+              error: e.message
+            });
+          }
+        } else {
+          console.log(`❌ Java not found at: ${javaPath}`);
+        }
+      }
+      
+      return {
+        success: true,
+        systemJava,
+        bundledJavas,
+        recommended: bundledJavas[0] || systemJava
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  });
+  
+  ipcMain.handle('debug:checkOwnership', async () => {
+    try {
+      if (!minecraftAuth.isAuthenticated()) {
+        return { 
+          success: false, 
+          error: 'Not authenticated with Microsoft. Please login first.'
+        };
+      }
+      
+      const ownsGame = await minecraftAuth.checkGameOwnership();
+      return {
+        success: true,
+        ownsGame
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// Clean up when quitting
+app.on('will-quit', () => {
+  // Unregister all shortcuts
+  const { globalShortcut } = require('electron');
+  globalShortcut.unregisterAll();
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    const savedUser = loadUserConfig();
+    if (savedUser) {
+      createMainWindow(savedUser);
+    } else {
+      createLoginWindow();
+    }
+  }
+});
