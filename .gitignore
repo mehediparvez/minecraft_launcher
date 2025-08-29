@@ -16,6 +16,8 @@ release/
 *.dmg
 *.zip
 *.tar.gz
+*.deb
+*.AppImage
 
 # Environment variables and secrets
 .env
@@ -71,3 +73,14 @@ coverage/
 # Personal development notes
 notes.md
 TODO.md
+
+# Build artifacts and logs
+build-*.log
+*.AppImage
+*.deb
+
+# Temporary backup directories
+.installer-backup/
+
+# Development desktop file (production builds create their own)
+void-client.desktop

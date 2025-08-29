@@ -1,0 +1,78 @@
+{
+  "installer": {
+    "name": "Void Client",
+    "version": "1.0.0",
+    "description": "Lightweight Minecraft launcher with runtime downloads",
+    "minimalInstaller": true
+  },
+  "bundledFiles": {
+    "essential": [
+      "src/**/*",
+      "build/icon.*",
+      "minecraft/launcher_config.json",
+      "minecraft/log4j2_17-111.xml",
+      "minecraft/troubleshooting.txt"
+    ],
+    "exclude": [
+      "java/**/*",
+      "minecraft/assets/**/*",
+      "minecraft/libraries/**/*",
+      "minecraft/versions/**/*",
+      "minecraft/mods/**/*",
+      "minecraft/natives/**/*",
+      "minecraft/downloads/**/*",
+      "minecraft/logs/**/*",
+      "minecraft/saves/**/*",
+      "minecraft/resourcepacks/**/*"
+    ]
+  },
+  "runtimeDownloads": {
+    "java": {
+      "enabled": true,
+      "versions": ["8", "21"],
+      "sources": {
+        "8": {
+          "win32": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_windows_hotspot_8u392b08.zip",
+          "linux": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_linux_hotspot_8u392b08.tar.gz",
+          "darwin": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_mac_hotspot_8u392b08.tar.gz"
+        },
+        "21": {
+          "win32": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_windows_hotspot_21.0.1_12.zip",
+          "linux": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_linux_hotspot_21.0.1_12.tar.gz",
+          "darwin": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_mac_hotspot_21.0.1_12.tar.gz"
+        }
+      }
+    },
+    "minecraft": {
+      "enabled": true,
+      "versions": ["1.21.1", "1.8.9"],
+      "libraries": true,
+      "assets": true,
+      "source": "mojang"
+    },
+    "mods": {
+      "enabled": true,
+      "fabricLoader": true,
+      "defaultMods": [
+        {
+          "name": "fabric-api",
+          "version": "0.116.4+1.21.1",
+          "url": "https://github.com/FabricMC/fabric/releases/download/0.116.4%2B1.21.1/fabric-api-0.116.4%2B1.21.1.jar"
+        }
+      ]
+    }
+  },
+  "downloadSizeEstimates": {
+    "java8": "45 MB",
+    "java21": "55 MB",
+    "minecraftCore": "15 MB",
+    "fabricLoader": "5 MB",
+    "total": "120 MB"
+  },
+  "optimization": {
+    "parallelDownloads": 3,
+    "retryAttempts": 3,
+    "checksums": true,
+    "compression": true
+  }
+}

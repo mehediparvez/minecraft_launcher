@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Void Client - Initial Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .setup-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        .setup-step {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .setup-step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .download-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .download-list {
+            text-align: left;
+            margin: 15px 0;
+        }
+
+        .download-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .download-item:last-child {
+            border-bottom: none;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #81C784);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .progress-text {
+            margin: 10px 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #757575, #616161);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-icon {
+            font-size: 48px;
+            color: #4CAF50;
+            margin: 20px 0;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.2);
+            color: #ffcdd2;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="logo">VC</div>
+        <h1>Void Client</h1>
+        <p class="subtitle">Initial Setup Required</p>
+
+        <!-- Welcome Step -->
+        <div class="setup-step active" id="welcome-step">
+            <p>Welcome to Void Client! This is your first time running the application.</p>
+            <div class="download-info">
+                <p><strong>Required Downloads:</strong></p>
+                <div class="download-list" id="download-list">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <p style="margin-top: 15px;"><strong>Total Size:</strong> <span id="total-size">~120 MB</span></p>
+            </div>
+            <p style="margin: 20px 0; font-size: 14px; opacity: 0.8;">
+                These components will be downloaded to your user data directory and only need to be downloaded once.
+            </p>
+            <button class="btn" onclick="startSetup()">Start Download</button>
+            <button class="btn btn-secondary" onclick="window.close()">Cancel</button>
+        </div>
+
+        <!-- Progress Step -->
+        <div class="setup-step" id="progress-step">
+            <p>Downloading required components...</p>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="progress-text" id="progress-text">Preparing download...</div>
+            <div style="margin-top: 20px;">
+                <span class="spinner"></span>
+                <span>Please wait, this may take a few minutes</span>
+            </div>
+        </div>
+
+        <!-- Success Step -->
+        <div class="setup-step" id="success-step">
+            <div class="success-icon">✓</div>
+            <h2>Setup Complete!</h2>
+            <p>All required components have been downloaded successfully.</p>
+            <p style="margin: 20px 0; font-size: 14px; opacity: 0.8;">
+                Void Client is now ready to use. You can start playing Minecraft!
+            </p>
+            <button class="btn" onclick="completeSetup()">Continue to Launcher</button>
+        </div>
+
+        <!-- Error Step -->
+        <div class="setup-step" id="error-step">
+            <h2>Setup Failed</h2>
+            <div class="error-message" id="error-message">
+                <!-- Error message will be shown here -->
+            </div>
+            <button class="btn" onclick="retrySetup()">Retry</button>
+            <button class="btn btn-secondary" onclick="window.close()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        let currentStep = 'welcome';
+
+        function showStep(stepId) {
+            document.querySelectorAll('.setup-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById(stepId + '-step').classList.add('active');
+            currentStep = stepId;
+        }
+
+        async function startSetup() {
+            try {
+                showStep('progress');
+                
+                // Get download estimates
+                const setupInfo = await ipcRenderer.invoke('setup:start');
+                if (!setupInfo.success) {
+                    throw new Error(setupInfo.error);
+                }
+
+                // Start download
+                const result = await ipcRenderer.invoke('setup:download');
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+
+                showStep('success');
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        async function completeSetup() {
+            await ipcRenderer.invoke('setup:complete');
+        }
+
+        function retrySetup() {
+            showStep('welcome');
+            loadDownloadInfo();
+        }
+
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            showStep('error');
+        }
+
+        // Listen for progress updates
+        ipcRenderer.on('setup:progress', (event, progress) => {
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            
+            progressBar.style.width = progress.percentage + '%';
+            progressText.textContent = progress.filename || 'Downloading...';
+        });
+
+        async function loadDownloadInfo() {
+            try {
+                const setupInfo = await ipcRenderer.invoke('setup:start');
+                if (setupInfo.success && setupInfo.estimates) {
+                    const downloadList = document.getElementById('download-list');
+                    const estimates = setupInfo.estimates;
+                    
+                    downloadList.innerHTML = `
+                        <div class="download-item">
+                            <span>Java Runtime (Auto-detected)</span>
+                            <span id="java-requirement">Detecting...</span>
+                        </div>
+                        <div class="download-item">
+                            <span>Minecraft Assets</span>
+                            <span>${estimates.minecraftAssets}</span>
+                        </div>
+                        <div class="download-item">
+                            <span>Minecraft Core Files</span>
+                            <span>${estimates.minecraftCore}</span>
+                        </div>
+                        <div class="download-item">
+                            <span>Fabric Loader</span>
+                            <span>${estimates.fabricLoader}</span>
+                        </div>
+                    `;
+                    
+                    document.getElementById('total-size').textContent = estimates.totalEstimate;
+                }
+            } catch (error) {
+                console.error('Failed to load download info:', error);
+            }
+        }
+
+        // Load download info on startup
+        loadDownloadInfo();
+    </script>
+</body>
+</html>

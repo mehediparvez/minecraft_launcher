@@ -2,9 +2,11 @@ const { app, BrowserWindow, ipcMain, Menu, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { minecraftAuth } = require('./auth');
+const SetupManager = require('./setup-manager');
 
 let loginWindow;
 let mainWindow;
+let setupManager;
 
 function loadUserConfig() {
   const configFile = path.join('./minecraft', 'launcher_config.json');
@@ -209,6 +211,18 @@ app.whenReady().then(async () => {
   app.setName('Void Client');
   if (process.platform === 'linux') {
     app.setDesktopName('void-client.desktop');
+  }
+  
+  // Initialize setup manager
+  setupManager = new SetupManager();
+  
+  // Check if initial setup is required
+  const setupRequired = await setupManager.checkSetupRequired();
+  
+  if (setupRequired) {
+    // Show setup window and wait for completion
+    await setupManager.showSetupWindow();
+    await setupManager.waitForSetupCompletion();
   }
   
   // Initialize Microsoft Auth
@@ -455,6 +469,11 @@ app.on('window-all-closed', () => {
 
 // Clean up when quitting
 app.on('will-quit', () => {
+  // Clean up setup manager
+  if (setupManager) {
+    setupManager.cleanup();
+  }
+  
   // Unregister all shortcuts
   const { globalShortcut } = require('electron');
   globalShortcut.unregisterAll();

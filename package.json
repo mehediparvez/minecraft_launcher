@@ -13,19 +13,23 @@
     "start": "electron .",
     "dev": "NODE_ENV=development electron .",
     "test-captcha": "electron test-captcha.js",
+    "test-setup": "NODE_ENV=testing electron .",
+    "test-no-download": "SKIP_DOWNLOADS=true NODE_ENV=testing electron .",
     "build-all": "node build-all-platforms.js",
     "build-with-icon": "node build-with-icon.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "dist:win": "electron-builder --win",
-    "dist:mac": "electron-builder --mac",
-    "dist:linux": "electron-builder --linux"
+    "dist:win": "electron-builder --win --x64",
+    "dist:mac": "electron-builder --mac --x64 --arm64",
+    "dist:linux": "electron-builder --linux --x64",
+    "build:all-platforms": "npm run dist:win && npm run dist:mac && npm run dist:linux",
+    "release": "npm run dist && gh release create"
   },
   "build": {
     "appId": "com.voidclient.app",
     "productName": "Void Client",
     "directories": {
-      "output": "dist"
+      "output": "../releases"
     },
     "files": [
       "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
@@ -40,7 +44,17 @@
       "!**/{.travis,.jenkins,.appveyor,tsconfig.json,tsconfig.esm.json,webpack.config.js}",
       "**/*",
       "!dev-resources${/*}",
-      "!dev-workspace${/*}"
+      "!dev-workspace${/*}",
+      "!java${/*}",
+      "!minecraft/assets${/*}",
+      "!minecraft/libraries${/*}",
+      "!minecraft/versions${/*}",
+      "!minecraft/mods${/*}",
+      "!minecraft/natives${/*}",
+      "!minecraft/downloads${/*}",
+      "!minecraft/logs${/*}",
+      "!minecraft/saves${/*}",
+      "!minecraft/resourcepacks${/*}"
     ],
     "extraResources": [
       {
@@ -64,16 +78,13 @@
           "arch": [
             "x64"
           ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64"
-          ]
         }
       ],
       "icon": "build/icon.ico",
-      "requestedExecutionLevel": "asInvoker"
+      "requestedExecutionLevel": "asInvoker",
+      "publisherName": "Void Client Team",
+      "sign": false,
+      "verifyUpdateCodeSignature": false
     },
     "mac": {
       "target": [
@@ -116,12 +127,25 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "allowElevation": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
-      "artifactName": "${productName}-${version}-x64-installer.${ext}",
-      "deleteAppDataOnUninstall": false
+      "installerHeader": "build/icon.ico",
+      "installerSidebar": "build/icon.png",
+      "uninstallerSidebar": "build/icon.png",
+      "artifactName": "${productName}-${version}-x64-Setup.${ext}",
+      "deleteAppDataOnUninstall": false,
+      "displayLanguageSelector": false,
+      "installerLanguages": ["en_US"],
+      "language": "1033",
+      "multiLanguageInstaller": false,
+      "packElevateHelper": false,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "shortcutName": "${productName}",
+      "include": "build/installer.nsh"
     }
   },
   "dependencies": {
