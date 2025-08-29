@@ -29,6 +29,23 @@ minecraft/
 .minecraft/
 launcher_config.json
 
+# Large Java runtime files - should be downloaded separately
+java/
+files/
+dist/
+build/
+
+# Large Minecraft assets and libraries
+minecraft/libraries/
+minecraft/versions/
+minecraft/assets/
+minecraft/logs/
+minecraft/downloads/
+minecraft/saves/
+minecraft/resourcepacks/
+minecraft/mods/
+minecraft/natives/
+
 # IDE specific files
 .idea/
 .vscode/

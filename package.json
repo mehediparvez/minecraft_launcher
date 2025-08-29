@@ -1,13 +1,20 @@
 {
   "name": "void-client",
   "version": "1.0.0",
-  "description": "Minecraft launcher with Microsoft authentication",
+  "description": "Minecraft launcher with Microsoft authentication and captcha security",
   "main": "./src/index.js",
-  "author": "",
+  "homepage": "https://github.com/voidclient/void-client",
+  "author": {
+    "name": "Void Client Team",
+    "email": "contact@voidclient.dev"
+  },
   "license": "ISC",
   "scripts": {
     "start": "electron .",
     "dev": "NODE_ENV=development electron .",
+    "test-captcha": "electron test-captcha.js",
+    "build-all": "node build-all-platforms.js",
+    "build-with-icon": "node build-with-icon.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",
@@ -17,6 +24,9 @@
   "build": {
     "appId": "com.voidclient.app",
     "productName": "Void Client",
+    "directories": {
+      "output": "dist"
+    },
     "files": [
       "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
       "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
@@ -34,24 +44,18 @@
     ],
     "extraResources": [
       {
-        "from": "resources/app.asar.unpacked/files",
-        "to": "app.asar.unpacked/files",
+        "from": "build",
+        "to": "app.asar.unpacked/build",
         "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "resources/app.asar.unpacked/java",
-        "to": "app.asar.unpacked/java",
-        "filter": [
-          "**/*"
+          "*.png",
+          "*.ico",
+          "*.icns"
         ]
       }
     ],
     "asar": true,
     "asarUnpack": [
-      "java/**/*",
-      "files/**/*"
+      "build/**/*"
     ],
     "win": {
       "target": [
@@ -60,20 +64,29 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
         }
-      ]
+      ],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
     },
     "mac": {
       "target": [
         {
-          "target": "dmg",
+          "target": "zip",
           "arch": [
             "x64",
             "arm64"
           ]
         }
       ],
-      "category": "public.app-category.games"
+      "category": "public.app-category.games",
+      "icon": "build/icon.icns"
     },
     "linux": {
       "target": [
@@ -90,13 +103,25 @@
           ]
         }
       ],
-      "category": "Game"
+      "category": "Game",
+      "maintainer": "Void Client Team <contact@voidclient.dev>",
+      "icon": "build/icon.png",
+      "desktop": {
+        "Icon": "/usr/share/pixmaps/void-client.png",
+        "Name": "Void Client",
+        "Comment": "Minecraft launcher with Microsoft authentication",
+        "Categories": "Game;ActionGame;"
+      }
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "${productName}-${version}-x64-installer.${ext}",
+      "deleteAppDataOnUninstall": false
     }
   },
   "dependencies": {

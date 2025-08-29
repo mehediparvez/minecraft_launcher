@@ -1,0 +1,45 @@
+name: Build Void Client
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build for Windows
+      if: matrix.os == 'windows-latest'
+      run: npm run dist:win
+    
+    - name: Build for macOS
+      if: matrix.os == 'macos-latest'
+      run: npm run dist:mac
+    
+    - name: Build for Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: npm run dist:linux
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: void-client-${{ matrix.os }}
+        path: dist/

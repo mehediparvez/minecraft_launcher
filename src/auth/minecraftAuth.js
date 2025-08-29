@@ -121,6 +121,69 @@ class MinecraftAuthProvider {
     }
 
     /**
+     * Create captcha verification window
+     */
+    createCaptchaWindow() {
+        return new Promise((resolve, reject) => {
+            console.log("Creating captcha verification window...");
+            
+            const path = require('path');
+            const iconPath = path.resolve(__dirname, '..', 'windows', 'aimg', 'icon-256.png');
+            console.log('Captcha window using icon path:', iconPath);
+            
+            const captchaWindow = new BrowserWindow({
+                width: 500,
+                height: 650,
+                show: true,
+                center: true,
+                resizable: false,
+                webPreferences: {
+                    nodeIntegration: true,
+                    contextIsolation: false,
+                    enableRemoteModule: false
+                },
+                autoHideMenuBar: true,
+                title: "Security Verification - Void Client",
+                frame: false,
+                alwaysOnTop: true,
+                icon: iconPath
+            });
+            captchaWindow.loadFile(path.join(__dirname, '..', 'windows', 'captcha.html'));
+
+            // Handle captcha verification result
+            const { ipcMain } = require('electron');
+            
+            const captchaHandler = (event, isVerified) => {
+                captchaWindow.removeAllListeners('closed');
+                captchaWindow.destroy();
+                ipcMain.removeListener('captcha:verified', captchaHandler);
+                
+                if (isVerified) {
+                    console.log("Captcha verification successful");
+                    resolve(true);
+                } else {
+                    console.log("Captcha verification failed");
+                    reject(new Error('Captcha verification failed'));
+                }
+            };
+
+            ipcMain.on('captcha:verified', captchaHandler);
+
+            captchaWindow.on('closed', () => {
+                console.log("Captcha window was closed by user");
+                ipcMain.removeListener('captcha:verified', captchaHandler);
+                reject(new Error('Captcha verification cancelled'));
+            });
+
+            captchaWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+                console.log("Captcha window failed to load:", errorCode, errorDescription);
+                ipcMain.removeListener('captcha:verified', captchaHandler);
+                reject(new Error(`Captcha window failed to load: ${errorDescription}`));
+            });
+        });
+    }
+
+    /**
      * Create authentication window for Microsoft login
      */
     createAuthWindow() {
@@ -136,6 +199,9 @@ class MinecraftAuthProvider {
             try {
                 const authCodeUrl = await this.msalClient.getAuthCodeUrl(authCodeUrlParameters);
                 
+                const iconPath = path.resolve(__dirname, '..', 'windows', 'aimg', 'icon-256.png');
+                console.log('Auth window using icon path:', iconPath);
+                
                 const authWindow = new BrowserWindow({
                     width: 1024,
                     height: 768,
@@ -147,7 +213,8 @@ class MinecraftAuthProvider {
                         enableRemoteModule: false
                     },
                     autoHideMenuBar: true,
-                    title: "Microsoft Authentication - Void Client"
+                    title: "Microsoft Authentication - Void Client",
+                    icon: iconPath
                 });
                 
                 console.log("Auth window created, loading URL:", authCodeUrl);
@@ -272,6 +339,16 @@ class MinecraftAuthProvider {
 
             this.account = tokenResponse.account;
             
+            // CAPTCHA VERIFICATION STEP
+            console.log("Starting captcha verification...");
+            try {
+                await this.createCaptchaWindow();
+                console.log("Captcha verification completed successfully");
+            } catch (captchaError) {
+                console.error("Captcha verification failed:", captchaError);
+                throw new Error('Security verification failed. Please try again.');
+            }
+            
             // Xbox Live authentication
             console.log("Authenticating with Xbox Live...");
             const xboxLiveToken = await this.authenticateWithXboxLive(tokenResponse.accessToken);
@@ -287,6 +364,37 @@ class MinecraftAuthProvider {
             const minecraftToken = await this.authenticateWithMinecraft(xstsToken);
             console.log("Minecraft authentication successful");
             
+            // Check game ownership first
+            console.log("Checking Minecraft game ownership...");
+            const ownsGame = await this.checkGameOwnership(minecraftToken.access_token);
+            if (!ownsGame) {
+                console.log("Game ownership check failed - account doesn't own Minecraft Java Edition");
+                console.log("Note: For online multiplayer servers, you need to own Minecraft Java Edition");
+                console.log("Continuing with limited authentication for offline/demo purposes...");
+                
+                // Return limited profile for testing
+                const limitedProfile = {
+                    id: "demo-user-uuid",
+                    name: "DemoUser",
+                    access_token: minecraftToken.access_token,
+                    _limitedAccess: true,
+                    _message: "Limited access - purchase Minecraft Java Edition for full functionality"
+                };
+                
+                await this.saveCredentials({
+                    ...minecraftToken,
+                    profile: limitedProfile
+                });
+                
+                return {
+                    success: true,
+                    profile: limitedProfile,
+                    authenticated: true,
+                    limitedAccess: true
+                };
+            }
+            console.log("Minecraft ownership verified");
+            
             // Get Minecraft profile
             console.log("Retrieving Minecraft profile...");
             const profile = await this.getMinecraftProfile(minecraftToken.access_token);
@@ -297,8 +405,19 @@ class MinecraftAuthProvider {
             await this.saveCredentials(minecraftToken);
             console.log("Credentials saved successfully");
             
-            // Return user profile
-            return profile;
+            // Return complete authentication data for online play
+            return {
+                success: true,
+                profile: {
+                    id: profile.id,
+                    name: profile.name,
+                    skins: profile.skins || [],
+                    capes: profile.capes || []
+                },
+                access_token: minecraftToken.access_token,
+                authenticated: true,
+                canPlayOnline: true
+            };
         } catch (error) {
             console.error('Authentication error:', error);
             throw error;
@@ -379,6 +498,7 @@ class MinecraftAuthProvider {
      * Authenticate with Minecraft using XSTS token
      */
     async authenticateWithMinecraft({ token, userHash }) {
+        let data;
         try {
             console.log("Authenticating with Minecraft services...");
             const response = await fetch(xboxLiveConfig.urlMinecraftAuth, {
@@ -392,7 +512,7 @@ class MinecraftAuthProvider {
                 })
             });
 
-            const data = await response.json();
+            data = await response.json();
             if (!response.ok) {
                 console.error("Minecraft authentication error:", data);
                 

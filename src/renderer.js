@@ -1131,13 +1131,14 @@ function setupLaunchButton() {
         try {
           if (launcherIntegration.isAuthenticated()) {
             if (statusElement) {
-              statusElement.textContent = "Usando autenticación de Microsoft...";
+              statusElement.textContent = "Using Microsoft authentication...";
             }
             authInfo = await launcherIntegration.getMinecraftAuth();
+            console.log('Successfully retrieved Microsoft auth for launch');
           } else {
             // Fallback to offline mode
             if (statusElement) {
-              statusElement.textContent = "Usando modo sin conexión...";
+              statusElement.textContent = "Using offline mode...";
             }
             const generatedUUID = uuidv3(`OfflinePlayer:${nickInput}`, NAMESPACE);
             authInfo = {
@@ -1153,12 +1154,13 @@ function setupLaunchButton() {
                 clientId: ''
               }
             };
+            console.log('Using offline auth for launch');
           }
         } catch (error) {
-          console.error('Authentication error:', error);
+          console.error('Authentication error during launch:', error);
           // Fallback to offline mode if Microsoft auth fails
           if (statusElement) {
-            statusElement.textContent = "Error de autenticación, usando modo sin conexión...";
+            statusElement.textContent = "Microsoft auth failed, using offline mode...";
           }
           const generatedUUID = uuidv3(`OfflinePlayer:${nickInput}`, NAMESPACE);
           authInfo = {
@@ -1174,6 +1176,7 @@ function setupLaunchButton() {
               clientId: ''
             }
           };
+          console.log('Fallback to offline auth due to error');
         }
         
         let versionConfig;

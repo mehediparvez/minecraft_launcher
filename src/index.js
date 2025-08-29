@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { minecraftAuth } = require('./auth');
@@ -25,16 +25,39 @@ function loadUserConfig() {
 }
 
 function createLoginWindow() {
+  const iconPath = path.resolve(__dirname, '..', 'build', 'icon.png');
+  const fallbackIconPath = path.resolve(__dirname, 'windows/aimg/icon-256.png');
+  
+  // Use build icon if available, otherwise fallback to local icon
+  const finalIconPath = fs.existsSync(iconPath) ? iconPath : fallbackIconPath;
+  console.log('Using icon path:', finalIconPath);
+  
   loginWindow = new BrowserWindow({
-    width: 400,
-    height: 600,
+    width: 500,
+    height: 650,
     webPreferences: {
       contextIsolation: false,
       nodeIntegration: true,
     },
     frame: false,
     resizable: false,
+    center: true,
+    icon: finalIconPath,
   });
+  
+  // Also set icon programmatically after creation
+  try {
+    const { nativeImage } = require('electron');
+    const icon = nativeImage.createFromPath(finalIconPath);
+    if (!icon.isEmpty()) {
+      loginWindow.setIcon(icon);
+      console.log('Icon set successfully for login window');
+    } else {
+      console.log('Failed to load icon from path:', finalIconPath);
+    }
+  } catch (error) {
+    console.error('Error setting icon:', error);
+  }
   
   loginWindow.loadFile(path.join(__dirname, 'windows/login.html'));
   
@@ -44,6 +67,13 @@ function createLoginWindow() {
 }
 
 function createMainWindow(userNick) {
+  const iconPath = path.resolve(__dirname, '..', 'build', 'icon.png');
+  const fallbackIconPath = path.resolve(__dirname, 'windows/aimg/icon-256.png');
+  
+  // Use build icon if available, otherwise fallback to local icon
+  const finalIconPath = fs.existsSync(iconPath) ? iconPath : fallbackIconPath;
+  console.log('Main window using icon path:', finalIconPath);
+  
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 600,
@@ -53,7 +83,22 @@ function createMainWindow(userNick) {
     },
     frame: false,
     resizable: false,
+    icon: finalIconPath,
   });
+  
+  // Also set icon programmatically after creation
+  try {
+    const { nativeImage } = require('electron');
+    const icon = nativeImage.createFromPath(finalIconPath);
+    if (!icon.isEmpty()) {
+      mainWindow.setIcon(icon);
+      console.log('Icon set successfully for main window');
+    } else {
+      console.log('Failed to load icon from path:', finalIconPath);
+    }
+  } catch (error) {
+    console.error('Error setting main window icon:', error);
+  }
   
   mainWindow.loadFile(path.join(__dirname, 'windows/index.html'));
   
@@ -86,6 +131,9 @@ function createMainWindow(userNick) {
 
 // Create the debug window
 function createDebugWindow() {
+  const iconPath = path.resolve(__dirname, 'windows/aimg/icon-256.png');
+  console.log('Debug window using icon path:', iconPath);
+  
   const debugWindow = new BrowserWindow({
     width: 900,
     height: 700,
@@ -93,7 +141,8 @@ function createDebugWindow() {
       contextIsolation: false,
       nodeIntegration: true,
     },
-    title: "Void Client - Debug Panel"
+    title: "Void Client - Debug Panel",
+    icon: iconPath,
   });
   
   debugWindow.loadFile(path.join(__dirname, 'windows/debug.html'));
@@ -156,6 +205,12 @@ function updateMenu(hasDebugWindow = false) {
 }
 
 app.whenReady().then(async () => {
+  // Set app properties for better icon recognition
+  app.setName('Void Client');
+  if (process.platform === 'linux') {
+    app.setDesktopName('void-client.desktop');
+  }
+  
   // Initialize Microsoft Auth
   await minecraftAuth.init();
   

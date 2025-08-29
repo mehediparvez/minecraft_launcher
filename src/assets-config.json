@@ -1,0 +1,77 @@
+{
+  "assets": {
+    "java": {
+      "versions": {
+        "8": {
+          "win32": {
+            "url": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_windows_hotspot_8u392b08.zip",
+            "size": "45MB",
+            "checksum": "sha256:placeholder"
+          },
+          "linux": {
+            "url": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_linux_hotspot_8u392b08.tar.gz",
+            "size": "42MB",
+            "checksum": "sha256:placeholder"
+          },
+          "darwin": {
+            "url": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_mac_hotspot_8u392b08.tar.gz",
+            "size": "44MB",
+            "checksum": "sha256:placeholder"
+          }
+        },
+        "21": {
+          "win32": {
+            "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_windows_hotspot_21.0.1_12.zip",
+            "size": "52MB",
+            "checksum": "sha256:placeholder"
+          },
+          "linux": {
+            "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_linux_hotspot_21.0.1_12.tar.gz",
+            "size": "48MB",
+            "checksum": "sha256:placeholder"
+          },
+          "darwin": {
+            "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_mac_hotspot_21.0.1_12.tar.gz",
+            "size": "50MB",
+            "checksum": "sha256:placeholder"
+          }
+        }
+      }
+    },
+    "minecraft": {
+      "essential_mods": [
+        {
+          "name": "VoidClient",
+          "version": "1.21.1",
+          "url": "https://your-cdn.com/mods/VoidClient-1.21.1.jar",
+          "size": "5.9MB",
+          "required": true
+        },
+        {
+          "name": "FabricAPI",
+          "version": "0.116.4+1.21.1",
+          "url": "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/0.116.4+1.21.1/fabric-api-0.116.4+1.21.1.jar",
+          "size": "2.4MB",
+          "required": true
+        }
+      ],
+      "optional_mods": [
+        {
+          "name": "AxolotlClient",
+          "version": "2.2.10+1.8.9",
+          "url": "https://your-cdn.com/mods/AxolotlClient-2.2.10+1.8.9.jar",
+          "size": "1.4MB",
+          "required": false,
+          "description": "Enhanced PvP client for 1.8.9"
+        }
+      ]
+    }
+  },
+  "download_strategy": {
+    "on_demand": true,
+    "cache_duration": "7d",
+    "retry_attempts": 3,
+    "chunk_size": "1MB",
+    "progress_reporting": true
+  }
+}
