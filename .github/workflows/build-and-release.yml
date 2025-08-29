@@ -34,7 +34,7 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-      working-directory: dev-workspace
+        cache-dependency-path: 'dev-workspace/package-lock.json'
 
     - name: Install Dependencies
       working-directory: dev-workspace
