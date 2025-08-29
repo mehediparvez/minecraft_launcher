@@ -46,10 +46,12 @@ jobs:
 
     - name: Build Windows Installer
       if: matrix.os == 'windows-latest'
+      env:
+        CSC_IDENTITY_AUTO_DISCOVERY: false
       run: |
         npm run dist:win
         echo "Build completed for Windows"
-        dir dist
+        if (Test-Path "dist") { Get-ChildItem dist } else { echo "dist directory not found" }
 
     - name: Build Linux Installers
       if: matrix.os == 'ubuntu-latest'

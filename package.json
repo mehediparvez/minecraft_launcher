@@ -29,7 +29,7 @@
     "appId": "com.voidclient.app",
     "productName": "Void Client",
     "directories": {
-      "output": "../releases"
+      "output": "dist"
     },
     "files": [
       "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
@@ -82,9 +82,7 @@
       ],
       "icon": "build/icon.ico",
       "requestedExecutionLevel": "asInvoker",
-      "publisherName": "Void Client Team",
-      "sign": false,
-      "verifyUpdateCodeSignature": false
+      "publisherName": "Void Client Team"
     },
     "mac": {
       "target": [
