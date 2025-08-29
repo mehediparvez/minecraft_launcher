@@ -34,10 +34,9 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: 'dev-workspace/package-lock.json'
+        cache-dependency-path: 'package-lock.json'
 
     - name: Install Dependencies
-      working-directory: dev-workspace
       run: npm ci
 
     - name: Create Release Directory
@@ -47,7 +46,6 @@ jobs:
 
     - name: Build Windows Installer
       if: matrix.os == 'windows-latest'
-      working-directory: dev-workspace
       run: |
         npm run dist:win
         echo "Build completed for Windows"
@@ -55,7 +53,6 @@ jobs:
 
     - name: Build Linux Installers
       if: matrix.os == 'ubuntu-latest'
-      working-directory: dev-workspace
       run: |
         npm run dist:linux
         echo "Build completed for Linux"
@@ -63,7 +60,6 @@ jobs:
 
     - name: Build macOS Installer
       if: matrix.os == 'macos-latest'
-      working-directory: dev-workspace
       run: |
         npm run dist:mac
         echo "Build completed for macOS"
@@ -73,14 +69,14 @@ jobs:
       shell: bash
       run: |
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cp dev-workspace/dist/*.exe ../installers/win/ || echo "No .exe files found"
-          cp dev-workspace/dist/*.exe.blockmap ../installers/win/ || echo "No blockmap files found"
+          cp dist/*.exe ../installers/win/ || echo "No .exe files found"
+          cp dist/*.exe.blockmap ../installers/win/ || echo "No blockmap files found"
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-          cp dev-workspace/dist/*.AppImage ../installers/linux/ || echo "No AppImage files found"
-          cp dev-workspace/dist/*.deb ../installers/linux/ || echo "No .deb files found"
+          cp dist/*.AppImage ../installers/linux/ || echo "No AppImage files found"
+          cp dist/*.deb ../installers/linux/ || echo "No .deb files found"
         elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-          cp dev-workspace/dist/*.dmg ../installers/mac/ || echo "No .dmg files found"
-          cp dev-workspace/dist/*.dmg.blockmap ../installers/mac/ || echo "No blockmap files found"
+          cp dist/*.dmg ../installers/mac/ || echo "No .dmg files found"
+          cp dist/*.dmg.blockmap ../installers/mac/ || echo "No blockmap files found"
         fi
 
     - name: List Built Files
@@ -89,19 +85,19 @@ jobs:
         echo "=== Built Files ==="
         find ../installers -type f -name "*" || echo "No files in installers directory"
         echo "=== Dist Directory ==="
-        find dev-workspace/dist -type f -name "*" || echo "No files in dist directory"
+        find dist -type f -name "*" || echo "No files in dist directory"
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: void-client-${{ matrix.platform }}
         path: |
-          dev-workspace/dist/*.exe
-          dev-workspace/dist/*.dmg
-          dev-workspace/dist/*.AppImage
-          dev-workspace/dist/*.deb
-          dev-workspace/dist/*.blockmap
-          dev-workspace/dist/*.yml
+          dist/*.exe
+          dist/*.dmg
+          dist/*.AppImage
+          dist/*.deb
+          dist/*.blockmap
+          dist/*.yml
         retention-days: 30
 
   release:
