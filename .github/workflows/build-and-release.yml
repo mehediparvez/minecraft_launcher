@@ -48,22 +48,23 @@ jobs:
       if: matrix.os == 'windows-latest'
       env:
         CSC_IDENTITY_AUTO_DISCOVERY: false
+        ELECTRON_BUILDER_CACHE: D:\cache
       run: |
-        npm run dist:win
+        npm run dist:win -- --publish=never
         echo "Build completed for Windows"
         if (Test-Path "dist") { Get-ChildItem dist } else { echo "dist directory not found" }
 
     - name: Build Linux Installers
       if: matrix.os == 'ubuntu-latest'
       run: |
-        npm run dist:linux
+        npm run dist:linux -- --publish=never
         echo "Build completed for Linux"
         ls -la dist/
 
     - name: Build macOS Installer
       if: matrix.os == 'macos-latest'
       run: |
-        npm run dist:mac
+        npm run dist:mac -- --publish=never
         echo "Build completed for macOS"
         ls -la dist/
 
