@@ -137,7 +137,7 @@ jobs:
         echo "=== Release Files ==="
         ls -la release-files/ || echo "No release files found"
 
-      - name: Set up version
+    - name: Set up version
         id: version
         run: |
           # Use fixed version 1.0.0
