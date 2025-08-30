@@ -476,7 +476,11 @@ function getJavaPath(minecraftVersion) {
     path.join(__dirname, '..', 'java', 'java21', 'bin'),
     path.join(__dirname, '..', 'java', 'java8', 'bin'),
     
-    // Packaged app locations
+    // Packaged app locations - extraResources are in resources/ directly
+    path.join(process.resourcesPath, 'java', 'java21', 'bin'),
+    path.join(process.resourcesPath, 'java', 'java8', 'bin'),
+    
+    // Legacy paths (old locations)
     path.join(process.resourcesPath, 'app.asar.unpacked', 'java', 'java21', 'bin'),
     path.join(process.resourcesPath, 'app.asar.unpacked', 'java', 'java8', 'bin')
   ];
@@ -1258,6 +1262,13 @@ function setupLaunchButton() {
           minRam = "1G";
         }
         
+        // Get proper application paths
+        const appPaths = await ipcRenderer.invoke('get-app-paths');
+        console.log('Application paths:', appPaths);
+        
+        const minecraftDir = appPaths.minecraftDir;
+        console.log('Using minecraft directory:', minecraftDir);
+        
         // Platform-specific launch options
         const platformOptions = {};
         
@@ -1273,7 +1284,7 @@ function setupLaunchButton() {
         
         const opt = {
           authorization: authInfo,
-          root: "./minecraft",
+          root: minecraftDir,
           version: versionConfig,
           memory: {
             max: maxRam,
@@ -1293,16 +1304,45 @@ function setupLaunchButton() {
           }
         };
         
+        // Use bundled assets if available
+        if (appPaths.bundledAssets && fs.existsSync(appPaths.bundledAssets)) {
+          console.log('✅ Using bundled assets from:', appPaths.bundledAssets);
+          
+          // Check for bundled version manifest
+          const bundledVersionManifest = path.join(appPaths.bundledAssets, 'minecraft', 'versions', selectedVersion.number, `${selectedVersion.number}.json`);
+          if (fs.existsSync(bundledVersionManifest)) {
+            console.log('✅ Found bundled version manifest:', bundledVersionManifest);
+            // minecraft-launcher-core will use this automatically if it exists in the minecraft directory
+          }
+          
+          // Copy bundled assets to minecraft directory if they don't exist
+          const targetVersionDir = path.join(minecraftDir, 'versions', selectedVersion.number);
+          const targetVersionFile = path.join(targetVersionDir, `${selectedVersion.number}.json`);
+          
+          if (!fs.existsSync(targetVersionFile)) {
+            try {
+              fs.mkdirSync(targetVersionDir, { recursive: true });
+              fs.copyFileSync(bundledVersionManifest, targetVersionFile);
+              console.log('✅ Copied bundled version manifest to minecraft directory');
+            } catch (error) {
+              console.warn('⚠️ Could not copy bundled version manifest:', error.message);
+            }
+          }
+        } else {
+          console.log('⚠️ No bundled assets found, will download from internet');
+        }
+        
         console.log('Launching with options:', JSON.stringify({
           version: opt.version,
           memory: opt.memory,
           javaPath: opt.javaPath,
-          platform: process.platform
+          root: opt.root,
+          platform: process.platform,
+          bundledAssets: !!appPaths.bundledAssets
         }));
         
         // Check minecraft directory
         console.log('📁 Checking minecraft directory...');
-        const minecraftDir = './minecraft';
         try {
           if (fs.existsSync(minecraftDir)) {
             console.log('✅ Minecraft directory exists');

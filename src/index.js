@@ -363,6 +363,17 @@ app.whenReady().then(async () => {
       `);
     }
   });
+
+  // Get application paths
+  ipcMain.handle('get-app-paths', () => {
+    return {
+      minecraftDir: pathManager.get('minecraft'),
+      userDataDir: pathManager.getUserDataDir(),
+      javaDir: pathManager.get('java'),
+      resourcesPath: process.resourcesPath,
+      bundledAssets: process.resourcesPath ? path.join(process.resourcesPath, 'assets') : null
+    };
+  });
   
   ipcMain.handle('debug:testLogin', async (event, username) => {
     try {
