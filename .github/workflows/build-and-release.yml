@@ -43,6 +43,71 @@ jobs:
     - name: Install Dependencies
       run: npm ci
 
+    - name: Verify Pre-bundled Assets
+      shell: bash
+      run: |
+        echo "Verifying pre-bundled Java runtimes and assets..."
+        
+        # Check if Java runtimes exist for current platform
+        if [ "${{ matrix.platform }}" = "win" ]; then
+          echo "Checking Windows Java runtimes..."
+          if [ -f "java/windows-x64/java8/bin/java.exe" ]; then
+            echo "✓ Java 8 Windows runtime found"
+          else
+            echo "✗ Java 8 Windows runtime missing"
+            exit 1
+          fi
+          if [ -f "java/windows-x64/java21/bin/java.exe" ]; then
+            echo "✓ Java 21 Windows runtime found"
+          else
+            echo "✗ Java 21 Windows runtime missing"
+            exit 1
+          fi
+          
+        elif [ "${{ matrix.platform }}" = "linux" ]; then
+          echo "Checking Linux Java runtimes..."
+          if [ -f "java/linux-x64/java8/bin/java" ]; then
+            echo "✓ Java 8 Linux runtime found"
+          else
+            echo "✗ Java 8 Linux runtime missing"
+            exit 1
+          fi
+          if [ -f "java/linux-x64/java21/bin/java" ]; then
+            echo "✓ Java 21 Linux runtime found"
+          else
+            echo "✗ Java 21 Linux runtime missing"
+            exit 1
+          fi
+          
+        elif [ "${{ matrix.platform }}" = "mac" ]; then
+          echo "Checking macOS Java runtimes..."
+          if [ -f "java/mac-x64/java8/Contents/Home/bin/java" ]; then
+            echo "✓ Java 8 macOS runtime found"
+          else
+            echo "✗ Java 8 macOS runtime missing"
+            exit 1
+          fi
+          if [ -f "java/mac-x64/java21/Contents/Home/bin/java" ]; then
+            echo "✓ Java 21 macOS runtime found"
+          else
+            echo "✗ Java 21 macOS runtime missing"
+            exit 1
+          fi
+        fi
+        
+        # Check if assets exist
+        if [ -f "assets/manifests/assets.json" ]; then
+          echo "✓ Minecraft assets found"
+        else
+          echo "✗ Minecraft assets missing"
+          exit 1
+        fi
+        
+        # Display sizes
+        echo "Asset sizes:"
+        du -sh java/${{ matrix.platform == 'win' && 'windows-x64' || matrix.platform == 'linux' && 'linux-x64' || 'mac-x64' }}/* || true
+        du -sh assets/* || true
+
     - name: Create Release Directory
       run: |
         mkdir -p ../installers
@@ -165,10 +230,12 @@ jobs:
           
           **Features:**
           - Microsoft OAuth2 authentication with captcha security
-          - Automatic Java runtime download and management
-          - Minimal installer with runtime asset downloading
+          - Pre-bundled Java runtimes (Java 8 & 21) for instant setup
+          - Complete Minecraft assets pre-bundled (no downloads required)
           - Cross-platform support (Windows, macOS, Linux)
           - Support for multiple Minecraft versions
+          - Zero internet dependency after installation
+          - Optimized installer size with platform-specific Java runtimes
           
           ### 📦 Available Downloads:
           
