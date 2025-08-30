@@ -31,8 +31,8 @@ minecraft/
 .minecraft/
 launcher_config.json
 
-# Large Java runtime files - should be downloaded separately
-java/
+# Large Java runtime files - should be downloaded separately (uncomment next line for minimal builds)
+# java/
 files/
 dist/
 build/
