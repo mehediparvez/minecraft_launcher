@@ -12,12 +12,18 @@ release/
 
 # Electron app package directories
 *.app
-*.exe
 *.dmg
 *.zip
 *.tar.gz
 *.deb
 *.AppImage
+
+# Exclude built installer executables but allow Java runtime executables
+/dist/*.exe
+/releases/*.exe
+/out/*.exe
+*Setup*.exe
+*Installer*.exe
 
 # Environment variables and secrets
 .env
