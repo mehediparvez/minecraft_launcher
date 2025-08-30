@@ -232,26 +232,44 @@ function createMainWindow(userNick) {
     createDebugWindow();
   });
   
-  // Always register F12 for developer tools (works in production too)
-  globalShortcut.register('F12', () => {
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.toggleDevTools();
+  // Register F12 for developer tools with better Windows compatibility
+  try {
+    const registered = globalShortcut.register('F12', () => {
+      if (mainWindow && mainWindow.webContents) {
+        console.log('🔧 F12 global shortcut triggered');
+        mainWindow.webContents.toggleDevTools();
+      }
+    });
+    if (registered) {
+      console.log('✅ F12 global shortcut registered successfully');
+    } else {
+      console.warn('⚠️ F12 global shortcut registration failed');
     }
-  });
+  } catch (error) {
+    console.error('❌ Error registering F12 shortcut:', error);
+  }
   
   // Register additional debug shortcuts
-  globalShortcut.register('CommandOrControl+Alt+I', () => {
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.toggleDevTools();
-    }
-  });
+  try {
+    globalShortcut.register('CommandOrControl+Alt+I', () => {
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.toggleDevTools();
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error registering Ctrl+Alt+I shortcut:', error);
+  }
   
   // Register console clear shortcut
-  globalShortcut.register('CommandOrControl+K', () => {
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.executeJavaScript('console.clear()');
-    }
-  });
+  try {
+    globalShortcut.register('CommandOrControl+K', () => {
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.executeJavaScript('console.clear()');
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error registering Ctrl+K shortcut:', error);
+  }
 }
 
 // Create the debug window
@@ -293,19 +311,30 @@ function updateMenu(hasDebugWindow = false) {
       },
       { type: 'separator' },
       {
-        label: 'Reload Application',
-        click: () => {
-          app.relaunch();
-          app.exit();
-        }
-      },
-      {
         label: 'Toggle Developer Tools',
-        accelerator: process.platform === 'darwin' ? 'Alt+Command+I' : 'Ctrl+Shift+I',
+        accelerator: 'F12',
         click: (item, focusedWindow) => {
           if (focusedWindow) {
             focusedWindow.webContents.toggleDevTools();
+          } else if (mainWindow) {
+            mainWindow.webContents.toggleDevTools();
           }
+        }
+      },
+      {
+        label: 'Reload Application',
+        accelerator: 'CmdOrCtrl+R',
+        click: () => {
+          if (mainWindow) {
+            mainWindow.webContents.reload();
+          }
+        }
+      },
+      {
+        label: 'Restart Application',
+        click: () => {
+          app.relaunch();
+          app.exit();
         }
       }
     ]
@@ -324,6 +353,24 @@ function updateMenu(hasDebugWindow = false) {
     },
     debugMenu
   ];
+  
+  // On macOS, add the app menu
+  if (process.platform === 'darwin') {
+    template.unshift({
+      label: app.getName(),
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideothers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    });
+  }
   
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
@@ -419,6 +466,13 @@ app.whenReady().then(async () => {
     console.log('🔧 Debug mode enabled via renderer request');
     if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.openDevTools();
+    }
+  });
+  
+  ipcMain.on('toggle-dev-tools', () => {
+    console.log('🔧 Toggle dev tools requested');
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.toggleDevTools();
     }
   });
   

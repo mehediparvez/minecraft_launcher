@@ -1558,7 +1558,7 @@ function setupLaunchButton() {
           }
         });
 
-        // Add timeout detection
+        // Add timeout detection - increased timeout for slower connections
         let downloadTimeout;
         let lastDownloadActivity = Date.now();
         
@@ -1576,8 +1576,9 @@ function setupLaunchButton() {
             return;
           }
           
-          if (timeSinceLastActivity > 30000) { // 30 seconds timeout
-            console.warn('⚠️ Download seems stuck, no activity for 30 seconds');
+          // Increased timeout to 120 seconds (2 minutes) for slower connections
+          if (timeSinceLastActivity > 120000) { // 2 minutes timeout instead of 30 seconds
+            console.warn('⚠️ Download seems stuck, no activity for 2 minutes');
             const statusElement = document.getElementById("status");
             if (statusElement) {
               statusElement.textContent = `Download timeout - trying alternative approach...`;
@@ -1602,23 +1603,23 @@ function setupLaunchButton() {
             newButton.disabled = false;
             
             if (statusElement) {
-              statusElement.textContent = `Download failed - Click launch to retry or try offline mode`;
+              statusElement.textContent = `Download timed out after 2 minutes - Click launch to retry`;
             }
             
-            // Suggest offline mode or retry
+            // Suggest retry after longer delay
             setTimeout(() => {
-              if (confirm('Download seems stuck. Would you like to try offline mode or retry download?')) {
+              if (confirm('Download seems stuck after 2 minutes. Would you like to retry download?')) {
                 // User chose to retry
                 console.log('🔄 User chose to retry download');
                 newButton.click(); // Trigger launch again
               } else {
-                // User chose offline mode or cancelled
-                console.log('❌ User cancelled or chose offline mode');
+                // User chose not to retry
+                console.log('❌ User cancelled retry');
                 if (statusElement) {
-                  statusElement.textContent = `Ready to play - ${currentUserNick} (Offline Mode)`;
+                  statusElement.textContent = `Ready to play - ${currentUserNick}`;
                 }
               }
-            }, 2000);
+            }, 3000); // Give user more time to read the message
           }
         };
         
@@ -1627,8 +1628,8 @@ function setupLaunchButton() {
         Launcher.on('download-status', () => { lastDownloadActivity = Date.now(); });
         Launcher.on('progress', () => { lastDownloadActivity = Date.now(); });
         
-        // Check for stuck downloads every 10 seconds
-        downloadTimeout = setInterval(checkDownloadProgress, 10000);
+        // Check for stuck downloads every 30 seconds (instead of 10)
+        downloadTimeout = setInterval(checkDownloadProgress, 30000);
 
         Launcher.on("close", (code) => {
           console.log('🎮 Minecraft process closed with code:', code);
@@ -1807,6 +1808,21 @@ async function initializeApp() {
   } catch (error) {
     console.error('❌ Error creating minecraft directory:', error);
   }
+  
+  // Set up F12 keyboard shortcut for dev tools (fallback if global shortcut fails)
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'F12') {
+      event.preventDefault();
+      console.log('🔧 F12 pressed - toggling developer tools');
+      ipcRenderer.send('toggle-dev-tools');
+    }
+    // Also handle Ctrl+Shift+I
+    if (event.ctrlKey && event.shiftKey && event.key === 'I') {
+      event.preventDefault();
+      console.log('🔧 Ctrl+Shift+I pressed - toggling developer tools');
+      ipcRenderer.send('toggle-dev-tools');
+    }
+  });
   
   // Inicializar la versión por defecto primero para que todo sea consistente
   console.log('📝 Initializing default version...');
