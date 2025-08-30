@@ -556,7 +556,7 @@ function getJavaPath(minecraftVersion) {
   
   // Try multiple Java locations in order of preference
   const javaLocations = [
-    // Current working directory (dev-workspace) - for development
+    // Current working directory (root project) - for development
     path.join(process.cwd(), 'java', 'java21', 'bin'),
     path.join(process.cwd(), 'java', 'java8', 'bin'),
     
@@ -1931,7 +1931,7 @@ async function initializeApp() {
   const debugIndicator = document.createElement('div');
   debugIndicator.id = 'debug-indicator';
   debugIndicator.innerHTML = '🔧';
-  debugIndicator.title = 'Press F12 for Developer Tools\nRight-click for debug menu';
+  debugIndicator.title = 'Debug Tools:\n- Click: Toggle DevTools\n- F12: Toggle DevTools\n- Ctrl+Shift+I: Toggle DevTools\n- Ctrl+Shift+P: Show Path Info\n- Right-click: Debug Menu';
   debugIndicator.style.cssText = `
     position: fixed;
     bottom: 10px;

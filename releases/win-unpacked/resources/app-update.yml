@@ -1,0 +1,6 @@
+owner: mehediparvez
+repo: minecraft_launcher
+provider: github
+updaterCacheDirName: void-client-updater
+publisherName:
+  - Void Client Team

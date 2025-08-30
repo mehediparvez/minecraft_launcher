@@ -594,7 +594,7 @@ app.whenReady().then(async () => {
       
       // Check bundled Java - look in multiple locations
       const javaPathsToCheck = [
-        // Current working directory (dev-workspace)
+        // Current working directory (root project)
         path.join(process.cwd(), 'java', 'java21', 'bin'),
         path.join(process.cwd(), 'java', 'java8', 'bin'),
         

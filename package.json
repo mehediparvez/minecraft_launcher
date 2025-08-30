@@ -45,7 +45,13 @@
       "!**/{.travis,.jenkins,.appveyor,tsconfig.json,tsconfig.esm.json,webpack.config.js}",
       "**/*",
       "!dev-resources${/*}",
-      "!dev-workspace${/*}",
+      "!scripts${/*}",
+      "!docs${/*}",
+      "!releases${/*}",
+      "!test-workflow.sh",
+      "!*.md",
+      "!debug-config.json",
+      "!installer-config.json",
       "!java${/*}",
       "minecraft/launcher_config.json",
       "minecraft/log4j2_17-111.xml", 
@@ -79,6 +85,16 @@
           "filter": ["**/*"]
         },
         {
+          "from": "java/java8/",
+          "to": "java/java8/",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "java/java21/",
+          "to": "java/java21/",
+          "filter": ["**/*"]
+        },
+        {
           "from": "assets/",
           "to": "assets/",
           "filter": ["**/*"]
@@ -100,6 +116,16 @@
         {
           "from": "java/mac-x64/",
           "to": "java/",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "java/java8/",
+          "to": "java/java8/",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "java/java21/",
+          "to": "java/java21/",
           "filter": ["**/*"]
         },
         {
@@ -135,6 +161,16 @@
         {
           "from": "java/linux-x64/",
           "to": "java/",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "java/java8/",
+          "to": "java/java8/",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "java/java21/",
+          "to": "java/java21/",
           "filter": ["**/*"]
         },
         {
