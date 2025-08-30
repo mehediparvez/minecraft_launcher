@@ -434,7 +434,11 @@ app.whenReady().then(async () => {
         path.join(__dirname, '..', 'java', 'java21', 'bin'),
         path.join(__dirname, '..', 'java', 'java8', 'bin'),
         
-        // Packaged app locations
+        // Packaged app locations - extraResources are in resources/ directly
+        path.join(process.resourcesPath, 'java', 'java21', 'bin'),
+        path.join(process.resourcesPath, 'java', 'java8', 'bin'),
+        
+        // Legacy paths (old locations)
         path.join(process.resourcesPath, 'app.asar.unpacked', 'java', 'java21', 'bin'),
         path.join(process.resourcesPath, 'app.asar.unpacked', 'java', 'java8', 'bin')
       ];
@@ -445,6 +449,35 @@ app.whenReady().then(async () => {
       console.log('Current working directory:', process.cwd());
       console.log('Script directory (__dirname):', __dirname);
       console.log('Resources path:', process.resourcesPath);
+      
+      // Debug: Show what's actually in the resources directory
+      if (process.resourcesPath && fs.existsSync(process.resourcesPath)) {
+        console.log('Contents of resources directory:');
+        try {
+          const resourcesContents = fs.readdirSync(process.resourcesPath);
+          resourcesContents.forEach(item => {
+            const itemPath = path.join(process.resourcesPath, item);
+            const isDir = fs.statSync(itemPath).isDirectory();
+            console.log(`  ${isDir ? 'DIR' : 'FILE'}: ${item}`);
+            
+            // If it's the java directory, show its contents too
+            if (item === 'java' && isDir) {
+              try {
+                const javaContents = fs.readdirSync(itemPath);
+                javaContents.forEach(javaItem => {
+                  const javaItemPath = path.join(itemPath, javaItem);
+                  const javaIsDir = fs.statSync(javaItemPath).isDirectory();
+                  console.log(`    ${javaIsDir ? 'DIR' : 'FILE'}: ${javaItem}`);
+                });
+              } catch (e) {
+                console.log(`    Error reading java directory: ${e.message}`);
+              }
+            }
+          });
+        } catch (e) {
+          console.log('Error reading resources directory:', e.message);
+        }
+      }
       
       for (const javaBasePath of javaPathsToCheck) {
         const javaExeName = process.platform === 'win32' ? 'javaw.exe' : 'java';

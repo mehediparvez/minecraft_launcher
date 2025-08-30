@@ -13,21 +13,46 @@ class JavaUtil {
         if (process.resourcesPath && !process.resourcesPath.includes('node_modules')) {
             // Production - Java is bundled in resources
             bundledPath = path.join(process.resourcesPath, 'java', javaVersion);
+            console.log(`[Java-Util] Production mode - Checking bundled path: ${bundledPath}`);
+            console.log(`[Java-Util] Resources path: ${process.resourcesPath}`);
         } else {
             // Development - check relative path
             bundledPath = path.join(__dirname, '..', 'java', javaVersion);
+            console.log(`[Java-Util] Development mode - Checking relative path: ${bundledPath}`);
         }
         
         const javaExe = process.platform === 'win32' ? 'javaw.exe' : 'java';
         const bundledJavaExecutable = path.join(bundledPath, 'bin', javaExe);
         
+        console.log(`[Java-Util] Looking for Java executable: ${bundledJavaExecutable}`);
+        console.log(`[Java-Util] Java executable exists: ${fs.existsSync(bundledJavaExecutable)}`);
+        
+        // Debug: List what's actually in the java directory
+        try {
+            const javaDir = path.join(process.resourcesPath || path.join(__dirname, '..'), 'java');
+            if (fs.existsSync(javaDir)) {
+                console.log(`[Java-Util] Contents of java directory (${javaDir}):`);
+                const contents = fs.readdirSync(javaDir);
+                contents.forEach(item => {
+                    const itemPath = path.join(javaDir, item);
+                    const isDir = fs.statSync(itemPath).isDirectory();
+                    console.log(`[Java-Util]   ${isDir ? 'DIR' : 'FILE'}: ${item}`);
+                });
+            } else {
+                console.log(`[Java-Util] Java directory does not exist: ${javaDir}`);
+            }
+        } catch (error) {
+            console.log(`[Java-Util] Error listing java directory: ${error.message}`);
+        }
+        
         // If bundled Java exists, use that
         if (fs.existsSync(bundledJavaExecutable)) {
-            console.log(`Using bundled Java: ${bundledJavaExecutable}`);
+            console.log(`[Java-Util] Using bundled Java: ${bundledJavaExecutable}`);
             return bundledJavaExecutable;
         }
         
         // Fallback: throw error since we expect bundled Java
+        console.log(`[Java-Util] Bundled Java ${javaVersion} not found at: ${bundledPath}`);
         throw new Error(`Bundled Java ${javaVersion} not found at: ${bundledPath}`);
     }
 
