@@ -76,6 +76,16 @@ class MinecraftAuthProvider {
                 return { success: false, error: error.message };
             }
         });
+
+        ipcMain.handle('minecraft:loadSavedCredentials', async () => {
+            try {
+                const profile = await this.loadSavedCredentials();
+                return { success: true, profile };
+            } catch (error) {
+                console.error('Load saved credentials error:', error);
+                return { success: false, error: error.message };
+            }
+        });
         
         // Debug-specific handlers
         ipcMain.handle('minecraft:debug:getStatus', async () => {
