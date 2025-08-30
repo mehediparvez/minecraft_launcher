@@ -5,6 +5,63 @@ const path = require('path');
 const { ipcRenderer } = require('electron');
 const { setTimeout } = require('timers');
 
+// Function to clear MCLC cache that might contain corrupted JSON
+async function clearMCLCCache(minecraftDir) {
+  try {
+    console.log('🧹 Clearing MCLC cache...');
+    const cacheDir = path.join(minecraftDir, 'cache', 'json');
+    
+    if (fs.existsSync(cacheDir)) {
+      const cacheFiles = fs.readdirSync(cacheDir);
+      for (const file of cacheFiles) {
+        if (file.includes('version_manifest') || file.includes('manifest')) {
+          const filePath = path.join(cacheDir, file);
+          console.log('🗑️ Removing cached manifest:', filePath);
+          fs.unlinkSync(filePath);
+        }
+      }
+    }
+    console.log('✅ MCLC cache cleared');
+  } catch (error) {
+    console.warn('⚠️ Error clearing MCLC cache:', error.message);
+  }
+}
+
+// Function to pre-download correct version manifest
+async function downloadCorrectManifest(minecraftDir) {
+  try {
+    console.log('📥 Pre-downloading correct version manifest...');
+    const cacheDir = path.join(minecraftDir, 'cache', 'json');
+    
+    // Ensure cache directory exists
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+    
+    const manifestUrl = 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json';
+    const manifestPath = path.join(cacheDir, 'version_manifest.json');
+    
+    console.log('🌐 Fetching from:', manifestUrl);
+    const response = await fetch(manifestUrl);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const manifestData = await response.text();
+    
+    // Verify it's valid JSON
+    JSON.parse(manifestData);
+    
+    fs.writeFileSync(manifestPath, manifestData, 'utf8');
+    console.log('✅ Correct version manifest cached at:', manifestPath);
+    
+  } catch (error) {
+    console.error('❌ Error downloading correct manifest:', error.message);
+    throw error;
+  }
+}
+
 // Fix auth import with proper path resolution
 let launcherIntegration;
 try {
@@ -1522,7 +1579,14 @@ function setupLaunchButton() {
             resource: 'https://resources.download.minecraft.net',
             mavenForge: 'https://files.minecraftforge.net/maven/',
             defaultRepoForge: 'https://libraries.minecraft.net/',
-            fallbackMaven: 'https://repo1.maven.org/maven2/'
+            fallbackMaven: 'https://repo1.maven.org/maven2/',
+            // Add specific version manifest override
+            versionManifest: 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json',
+            // Add all possible Mojang endpoint overrides
+            launcher: 'https://piston-meta.mojang.com',
+            api: 'https://api.mojang.com',
+            sessionserver: 'https://sessionserver.mojang.com',
+            services: 'https://api.minecraftservices.com'
           },
           overrides: {
             detached: true,
@@ -1631,6 +1695,10 @@ function setupLaunchButton() {
           console.warn('⚠️ Network test failed:', e.message);
         }
 
+        // Clear MCLC cache and pre-download correct manifest
+        await clearMCLCCache(minecraftDir);
+        await downloadCorrectManifest(minecraftDir);
+        
         const minecraftProcess = Launcher.launch(opt);
         
         console.log('🎯 Launcher.launch() called, process object:', minecraftProcess);
