@@ -85,16 +85,6 @@
           "filter": ["**/*"]
         },
         {
-          "from": "java/java8/",
-          "to": "java/java8/",
-          "filter": ["**/*"]
-        },
-        {
-          "from": "java/java21/",
-          "to": "java/java21/",
-          "filter": ["**/*"]
-        },
-        {
           "from": "assets/",
           "to": "assets/",
           "filter": ["**/*"]
@@ -116,16 +106,6 @@
         {
           "from": "java/mac-x64/",
           "to": "java/",
-          "filter": ["**/*"]
-        },
-        {
-          "from": "java/java8/",
-          "to": "java/java8/",
-          "filter": ["**/*"]
-        },
-        {
-          "from": "java/java21/",
-          "to": "java/java21/",
           "filter": ["**/*"]
         },
         {
@@ -161,16 +141,6 @@
         {
           "from": "java/linux-x64/",
           "to": "java/",
-          "filter": ["**/*"]
-        },
-        {
-          "from": "java/java8/",
-          "to": "java/java8/",
-          "filter": ["**/*"]
-        },
-        {
-          "from": "java/java21/",
-          "to": "java/java21/",
           "filter": ["**/*"]
         },
         {
