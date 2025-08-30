@@ -48,111 +48,6 @@ class AssetDownloader {
             'troubleshooting.txt'
         ];
     }
-
-    // Java download URLs by platform and version
-    getJavaDownloadUrls() {
-        const platform = process.platform;
-        const arch = process.arch === 'x64' ? 'x64' : 'x86';
-        
-        // Use portable Java distributions that don't require installation
-        const urls = {
-            win32: {
-                java8: `https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_windows_hotspot_8u402b06.zip`,
-                java17: `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip`,
-                java21: `https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_windows_hotspot_21.0.2_13.zip`
-            },
-            linux: {
-                java8: `https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_linux_hotspot_8u402b06.tar.gz`,
-                java17: `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_linux_hotspot_17.0.10_7.tar.gz`,
-                java21: `https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_linux_hotspot_21.0.2_13.tar.gz`
-            },
-            darwin: {
-                java8: `https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_mac_hotspot_8u402b06.tar.gz`,
-                java17: `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_mac_hotspot_17.0.10_7.tar.gz`,
-                java21: `https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_mac_hotspot_21.0.2_13.tar.gz`
-            }
-        };
-        
-        return urls[platform] || urls.linux;
-    }
-
-    // Download and extract portable Java
-    async downloadJavaVersion(javaVersion, progressCallback) {
-        const urls = this.getJavaDownloadUrls();
-        const downloadUrl = urls[javaVersion];
-        
-        if (!downloadUrl) {
-            throw new Error(`Java ${javaVersion} not available for platform ${process.platform}`);
-        }
-        
-        const javaInstallDir = path.join(this.javaDir, javaVersion);
-        fs.mkdirSync(javaInstallDir, { recursive: true });
-        
-        const fileName = path.basename(downloadUrl);
-        const downloadPath = path.join(javaInstallDir, fileName);
-        
-        // Download Java archive
-        progressCallback?.({ 
-            current: 0, 
-            total: 100, 
-            currentFile: `Downloading ${javaVersion}...`,
-            speed: 'Initializing...' 
-        });
-        
-        await this.downloadFile(downloadUrl, downloadPath, (progress) => {
-            progressCallback?.({
-                current: progress.current,
-                total: progress.total,
-                currentFile: `${javaVersion} (${Math.round(progress.current / 1024 / 1024)}MB)`,
-                speed: progress.speed
-            });
-        });
-        
-        // Extract archive
-        progressCallback?.({ 
-            current: 90, 
-            total: 100, 
-            currentFile: `Extracting ${javaVersion}...`,
-            speed: 'Extracting...' 
-        });
-        
-        await this.extractArchive(downloadPath, javaInstallDir);
-        
-        // Clean up downloaded archive
-        fs.unlinkSync(downloadPath);
-        
-        progressCallback?.({ 
-            current: 100, 
-            total: 100, 
-            currentFile: `${javaVersion} installed`,
-            speed: 'Complete' 
-        });
-        
-        return this.getJavaExecutablePath(javaVersion);
-    }
-    
-    // Extract downloaded archive (zip/tar.gz)
-    async extractArchive(archivePath, extractDir) {
-        const { exec } = require('child_process');
-        const { promisify } = require('util');
-        const execAsync = promisify(exec);
-        
-        try {
-            if (archivePath.endsWith('.zip')) {
-                // Windows ZIP extraction
-                if (process.platform === 'win32') {
-                    await execAsync(`powershell Expand-Archive -Path "${archivePath}" -DestinationPath "${extractDir}" -Force`);
-                } else {
-                    await execAsync(`unzip -q "${archivePath}" -d "${extractDir}"`);
-                }
-            } else if (archivePath.endsWith('.tar.gz')) {
-                // Linux/macOS tar.gz extraction
-                await execAsync(`tar -xzf "${archivePath}" -C "${extractDir}" --strip-components=1`);
-            }
-        } catch (error) {
-            throw new Error(`Failed to extract ${archivePath}: ${error.message}`);
-        }
-    }
     
     // Get the executable path for a Java version
     getJavaExecutablePath(javaVersion) {
@@ -226,8 +121,8 @@ class AssetDownloader {
         const bundledJava21 = await this.checkBundledJava('java21');
         
         const checks = {
-            java8: bundledJava8 || await this.checkJavaInstalled(path.join(this.javaDir, 'java8'), '8'),
-            java21: bundledJava21 || await this.checkJavaInstalled(path.join(this.javaDir, 'java21'), '21'),
+            java8: bundledJava8, // Only check bundled Java since we're not downloading
+            java21: bundledJava21, // Only check bundled Java since we're not downloading
             minecraftCore: this.checkMinecraftCoreFiles(),
             fabricLoader: this.checkFabricLoader()
         };
@@ -277,14 +172,6 @@ class AssetDownloader {
         
         const downloads = [];
         
-        // Queue Java downloads
-        if (!status.components.java8) {
-            downloads.push(() => this.downloadJavaRuntime('8'));
-        }
-        if (!status.components.java21) {
-            downloads.push(() => this.downloadJavaRuntime('21'));
-        }
-
         // Queue Minecraft core files
         if (!status.components.minecraftCore) {
             downloads.push(() => this.downloadMinecraftCoreFiles());
@@ -305,63 +192,7 @@ class AssetDownloader {
         console.log('All missing components downloaded successfully');
     }
 
-    // Download Java runtime based on platform
-    async downloadJavaRuntime(version = '21', platform = process.platform) {
-        const javaUrls = {
-            'win32': {
-                '8': 'https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_windows_hotspot_8u402b06.zip',
-                '21': 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_windows_hotspot_21.0.2_13.zip'
-            },
-            'linux': {
-                '8': 'https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_linux_hotspot_8u402b06.tar.gz',
-                '21': 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_linux_hotspot_21.0.2_13.tar.gz'
-            },
-            'darwin': {
-                '8': 'https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_mac_hotspot_8u402b06.tar.gz',
-                '21': 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_mac_hotspot_21.0.2_13.tar.gz'
-            }
-        };
-
-        const url = javaUrls[platform]?.[version];
-        if (!url) {
-            throw new Error(`Java ${version} not available for platform ${platform}`);
-        }
-
-        const targetDir = path.join(this.javaDir, `java${version}`);
-        
-        if (await this.checkJavaInstalled(targetDir, version)) {
-            console.log(`Java ${version} already installed`);
-            return targetDir;
-        }
-
-        console.log(`Downloading Java ${version} for ${platform}...`);
-        await this.downloadAndExtract(url, targetDir, `Java ${version}`);
-        return targetDir;
-    }
-
-    async checkJavaInstalled(javaPath, version) {
-        try {
-            const executableName = process.platform === 'win32' ? 'java.exe' : 'java';
-            let javaBin;
-            
-            // Check different possible Java installation structures
-            const possiblePaths = [
-                path.join(javaPath, 'bin', executableName),
-                path.join(javaPath, 'jre', 'bin', executableName),
-                path.join(javaPath, `jdk-${version}`, 'bin', executableName)
-            ];
-
-            for (const possiblePath of possiblePaths) {
-                if (fs.existsSync(possiblePath)) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (error) {
-            return false;
-        }
-    }
-
+    
     async downloadAndExtract(url, targetDir, componentName) {
         return new Promise((resolve, reject) => {
             // Ensure target directory exists
@@ -747,11 +578,9 @@ class AssetDownloader {
     // Get download size estimates for user information
     getDownloadSizeEstimates() {
         return {
-            java8: '45 MB',
-            java21: '55 MB',
             minecraftCore: '15 MB',
             fabricLoader: '5 MB',
-            totalEstimate: '120 MB'
+            totalEstimate: '20 MB'
         };
     }
 }
