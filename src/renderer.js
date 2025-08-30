@@ -1527,8 +1527,10 @@ function setupLaunchButton() {
         // Use bundled manifests from assets/manifests/
         // Try multiple possible locations for bundled manifests
         const possibleManifestPaths = [
-          // Development path
-          path.resolve(__dirname, '..', 'assets', 'manifests'),
+          // Development path - from project root
+          path.resolve(process.cwd(), 'assets', 'manifests'),
+          // Development path - relative to renderer
+          path.resolve(__dirname, '..', '..', 'assets', 'manifests'),
           // Production path in extraResources
           path.join(appPaths.resourcesPath, 'assets', 'manifests'),
           // Alternative production path

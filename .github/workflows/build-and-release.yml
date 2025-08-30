@@ -141,6 +141,11 @@ jobs:
           curl -L "https://piston-meta.mojang.com/v1/packages/0802493292eb060c2899a710c262a352068d4e36/1.21.1.json" -o assets/minecraft/versions/1.21.1/1.21.1.json
           curl -L "https://piston-meta.mojang.com/v1/packages/0802493292eb060c2899a710c262a352068d4e36/1.21.1.json" -o assets/manifests/1.21.1.json
           
+          # Download Minecraft 1.8 version info and rename to 1.8.9 for compatibility
+          curl -L "https://piston-meta.mojang.com/v1/packages/9eb165eef46294062d8698c8a78e8ac914949e7a/1.8.json" -o /tmp/1.8.json
+          # Modify the version ID from 1.8 to 1.8.9 and save as 1.8.9.json
+          sed 's/"id": "1.8"/"id": "1.8.9"/g; s/"assets": "1.8"/"assets": "1.8.9"/g; s/"id": "1.8",/"id": "1.8.9",/g' /tmp/1.8.json > assets/manifests/1.8.9.json
+          
           # Download Fabric loader info
           curl -L "https://meta.fabricmc.net/v2/versions/loader" -o assets/fabric/loader-versions.json
           curl -L "https://meta.fabricmc.net/v2/versions/installer" -o assets/fabric/installer-versions.json
