@@ -1524,17 +1524,39 @@ function setupLaunchButton() {
               resource: 'https://resources.download.minecraft.net',
               mavenForge: 'https://files.minecraftforge.net/maven/',
               defaultRepoForge: 'https://libraries.minecraft.net/',
-              fallbackMaven: 'https://search.maven.org/remotecontent?filepath='
+              fallbackMaven: 'https://search.maven.org/remotecontent?filepath=',
+              // Override old deprecated URLs
+              versions: 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json',
+              versionManifest: 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'
             },
             ...platformOptions
           }
         };
         
         // Use bundled manifests from assets/manifests/
-        const bundledManifestsDir = path.resolve(__dirname, '..', 'assets', 'manifests');
-        console.log('Checking for bundled manifests in:', bundledManifestsDir);
+        // Try multiple possible locations for bundled manifests
+        const possibleManifestPaths = [
+          // Development path
+          path.resolve(__dirname, '..', 'assets', 'manifests'),
+          // Production path in extraResources
+          path.join(appPaths.resourcesPath, 'assets', 'manifests'),
+          // Alternative production path
+          path.join(process.resourcesPath, 'assets', 'manifests'),
+          // Fallback path
+          path.join(appPaths.bundledAssets, 'manifests')
+        ];
         
-        if (fs.existsSync(bundledManifestsDir)) {
+        let bundledManifestsDir = null;
+        
+        for (const manifestPath of possibleManifestPaths) {
+          console.log('Checking for bundled manifests in:', manifestPath);
+          if (fs.existsSync(manifestPath)) {
+            bundledManifestsDir = manifestPath;
+            break;
+          }
+        }
+        
+        if (bundledManifestsDir) {
           console.log('✅ Found bundled manifests directory');
           
           // Check for bundled version manifest
