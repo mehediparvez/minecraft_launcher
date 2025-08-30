@@ -470,6 +470,13 @@ app.whenReady().then(async () => {
   });
   
   ipcMain.on('toggle-dev-tools', () => {
+    console.log('🔧 Toggle dev tools requested from renderer');
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.toggleDevTools();
+    }
+  });
+  
+  ipcMain.on('toggle-dev-tools', () => {
     console.log('🔧 Toggle dev tools requested');
     if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.toggleDevTools();

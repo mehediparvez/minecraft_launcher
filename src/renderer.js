@@ -8,9 +8,11 @@ const { setTimeout } = require('timers');
 // Fix auth import with proper path resolution
 let launcherIntegration;
 try {
-  launcherIntegration = require('./auth').launcherIntegration;
+  const authModule = require('./auth');
+  launcherIntegration = authModule.launcherIntegration;
+  console.log('✅ Auth module loaded successfully');
 } catch (e) {
-  console.warn('Auth module not found, using fallback');
+  console.warn('Auth module not found, using fallback:', e.message);
   launcherIntegration = {
     isAuthenticated: () => false,
     getCurrentUser: () => null,
@@ -27,23 +29,58 @@ let appPaths = {
   launcherConfig: './minecraft/launcher_config.json'
 };
 
+// Function to get proper app paths
+async function getAppPaths() {
+  try {
+    const paths = await ipcRenderer.invoke('get-app-paths');
+    return {
+      minecraft: paths.minecraftDir,
+      mods: path.join(paths.minecraftDir, 'mods'),
+      versions: path.join(paths.minecraftDir, 'versions'),
+      launcherConfig: path.join(paths.minecraftDir, 'launcher_config.json'),
+      ...paths
+    };
+  } catch (error) {
+    console.warn('Failed to get app paths, using defaults:', error);
+    return appPaths;
+  }
+}
+
 // Load paths from main process
 async function initializePaths() {
   try {
-    const envInfo = await ipcRenderer.invoke('debug:getEnvironmentInfo');
-    if (envInfo && envInfo.paths) {
-      appPaths = envInfo.paths;
-      console.log('Paths loaded from main process:', appPaths);
-    }
+    appPaths = await getAppPaths();
+    console.log('Paths loaded from main process:', appPaths);
   } catch (error) {
     console.warn('Failed to load paths from main process, using defaults:', error);
   }
 }
 
-// Initialize paths when renderer loads
-initializePaths();
-
-const Launcher = new Client();
+  // Initialize paths when renderer loads
+  initializePaths();
+  
+  // Add keyboard shortcuts for development tools
+  document.addEventListener('keydown', (event) => {
+    // F12 key
+    if (event.key === 'F12') {
+      event.preventDefault();
+      console.log('🔧 F12 pressed - toggling developer tools');
+      ipcRenderer.send('toggle-dev-tools');
+    }
+    
+    // Ctrl+Shift+I (alternative dev tools shortcut)
+    if (event.ctrlKey && event.shiftKey && event.key === 'I') {
+      event.preventDefault();
+      console.log('🔧 Ctrl+Shift+I pressed - toggling developer tools');
+      ipcRenderer.send('toggle-dev-tools');
+    }
+    
+    // Ctrl+K (clear console)
+    if (event.ctrlKey && event.key === 'k') {
+      event.preventDefault();
+      console.clear();
+    }
+  });const Launcher = new Client();
 const NAMESPACE = uuidv3.DNS;
 
 let currentUserNick = '';
@@ -1576,50 +1613,26 @@ function setupLaunchButton() {
             return;
           }
           
-          // Increased timeout to 120 seconds (2 minutes) for slower connections
-          if (timeSinceLastActivity > 120000) { // 2 minutes timeout instead of 30 seconds
-            console.warn('⚠️ Download seems stuck, no activity for 2 minutes');
+          // Increased timeout to 60 seconds for slower connections, but don't auto-retry
+          if (timeSinceLastActivity > 60000) { // 1 minute timeout
+            console.warn('⚠️ Download seems slow, no activity for 1 minute');
             const statusElement = document.getElementById("status");
             if (statusElement) {
-              statusElement.textContent = `Download timeout - trying alternative approach...`;
+              statusElement.textContent = `Download seems slow... please wait or press F12 to check console`;
             }
             
-            // Clear the stuck download timeout and try recovery
+            // Only warn once per launch, don't keep showing dialogs
             if (downloadTimeout) {
               clearInterval(downloadTimeout);
+              downloadTimeout = null;
             }
             
-            // Try to recover by restarting with different options
-            console.log('🔄 Attempting download recovery...');
-            
-            // Hide download screen and show main interface
-            const fondoElement = document.getElementById("fondo");
-            const downloadElement = document.getElementById("download-screen");
-            if (fondoElement) fondoElement.style.display = "none";
-            if (downloadElement) downloadElement.style.display = "none";
-            
-            // Re-enable launch button
-            newButton.classList.remove("activo");
-            newButton.disabled = false;
-            
-            if (statusElement) {
-              statusElement.textContent = `Download timed out after 2 minutes - Click launch to retry`;
-            }
-            
-            // Suggest retry after longer delay
-            setTimeout(() => {
-              if (confirm('Download seems stuck after 2 minutes. Would you like to retry download?')) {
-                // User chose to retry
-                console.log('🔄 User chose to retry download');
-                newButton.click(); // Trigger launch again
-              } else {
-                // User chose not to retry
-                console.log('❌ User cancelled retry');
-                if (statusElement) {
-                  statusElement.textContent = `Ready to play - ${currentUserNick}`;
-                }
-              }
-            }, 3000); // Give user more time to read the message
+            // Log some helpful info but don't interrupt the download
+            console.log('� Download status check:');
+            console.log('- Time since last activity:', Math.round(timeSinceLastActivity / 1000), 'seconds');
+            console.log('- Game started check:', document.getElementById("fondo")?.style.display === "none");
+            console.log('- This is normal for first-time downloads or slow connections');
+            console.log('- Press F12 to open developer tools and monitor progress');
           }
         };
         
@@ -1704,17 +1717,22 @@ function initializeDefaultVersion() {
   switchModsForVersion(selectedVersion.number);
   
   // Check if we have the required directory structure for offline mode
-  checkRequiredDirectories();
+  checkRequiredDirectories().catch(error => {
+    console.error('Error checking required directories:', error);
+  });
 }
 
-function checkRequiredDirectories() {
+async function checkRequiredDirectories() {
   console.log('Checking required directories for offline play');
   
+  // Get proper app paths
+  const appPaths = await ipcRenderer.invoke('get-app-paths');
+  
   const requiredDirs = [
-    './minecraft',
-    './minecraft/mods',
-    './minecraft/versions',
-    `./minecraft/versions/${selectedVersion.custom}`
+    appPaths.minecraftDir,
+    path.join(appPaths.minecraftDir, 'mods'),
+    path.join(appPaths.minecraftDir, 'versions'),
+    path.join(appPaths.minecraftDir, 'versions', selectedVersion.custom)
   ];
   
   let allDirsExist = true;
@@ -1734,7 +1752,7 @@ function checkRequiredDirectories() {
   }
   
   // Check if we have a version JSON file
-  const versionJsonPath = `./minecraft/versions/${selectedVersion.custom}/${selectedVersion.custom}.json`;
+  const versionJsonPath = path.join(appPaths.minecraftDir, 'versions', selectedVersion.custom, `${selectedVersion.custom}.json`);
   
   if (!fs.existsSync(versionJsonPath)) {
     console.warn(`Version JSON file missing: ${versionJsonPath}`);
@@ -1797,13 +1815,18 @@ function checkRequiredDirectories() {
 // FUNCIÓN PRINCIPAL DE INICIALIZACIÓN - Ahora maneja la copia de archivos al inicio
 async function initializeApp() {
   console.log('🚀 Initializing app on platform:', process.platform);
+  console.log('🔧 Press F12 to open Developer Tools for debugging');
+  console.log('🔧 Right-click anywhere for context menu with debug options');
+  
+  // Initialize paths first
+  await initializePaths();
   
   // Create the minecraft directory if it doesn't exist
   try {
-    const minecraftDir = './minecraft';
-    if (!fs.existsSync(minecraftDir)) {
-      fs.mkdirSync(minecraftDir, { recursive: true });
-      console.log('✅ Created minecraft directory');
+    const paths = await getAppPaths();
+    if (!fs.existsSync(paths.minecraft)) {
+      fs.mkdirSync(paths.minecraft, { recursive: true });
+      console.log('✅ Created minecraft directory at:', paths.minecraft);
     }
   } catch (error) {
     console.error('❌ Error creating minecraft directory:', error);
@@ -1841,6 +1864,36 @@ async function initializeApp() {
   // Check dependencies
   console.log('☕ Checking Java installation...');
   checkJavaInstallation();
+  
+  // Add a small debug indicator in the corner
+  const debugIndicator = document.createElement('div');
+  debugIndicator.id = 'debug-indicator';
+  debugIndicator.innerHTML = '🔧';
+  debugIndicator.title = 'Press F12 for Developer Tools\nRight-click for debug menu';
+  debugIndicator.style.cssText = `
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-size: 16px;
+    opacity: 0.3;
+    cursor: pointer;
+    z-index: 1000;
+    transition: opacity 0.3s;
+  `;
+  
+  debugIndicator.addEventListener('mouseenter', () => {
+    debugIndicator.style.opacity = '1';
+  });
+  
+  debugIndicator.addEventListener('mouseleave', () => {
+    debugIndicator.style.opacity = '0.3';
+  });
+  
+  debugIndicator.addEventListener('click', () => {
+    ipcRenderer.send('toggle-dev-tools');
+  });
+  
+  document.body.appendChild(debugIndicator);
   
   // Initialize Microsoft auth
   try {
@@ -1950,10 +2003,17 @@ function checkJavaInstallation() {
 }
 
 // Add a file to help with troubleshooting
-function createTroubleshootingFile() {
+async function createTroubleshootingFile() {
   try {
-    const troubleshootingPath = path.join('./minecraft', 'troubleshooting.txt');
+    // Get proper app paths
+    const appPaths = await ipcRenderer.invoke('get-app-paths');
+    const troubleshootingPath = path.join(appPaths.minecraftDir, 'troubleshooting.txt');
     const os = require('os');
+    
+    // Ensure minecraft directory exists
+    if (!fs.existsSync(appPaths.minecraftDir)) {
+      fs.mkdirSync(appPaths.minecraftDir, { recursive: true });
+    }
     
     let content = 'Void Client Troubleshooting Information\n';
     content += '===================================\n\n';
@@ -1966,7 +2026,9 @@ function createTroubleshootingFile() {
     content += `Total Memory: ${Math.round(os.totalmem() / (1024 * 1024 * 1024))} GB\n`;
     content += `Free Memory: ${Math.round(os.freemem() / (1024 * 1024 * 1024))} GB\n`;
     content += `CPUs: ${os.cpus().length} (${os.cpus()[0].model})\n`;
-    content += `User Data Path: ${process.resourcesPath}\n`;
+    content += `Minecraft Directory: ${appPaths.minecraftDir}\n`;
+    content += `Resources Path: ${process.resourcesPath}\n`;
+    content += `User Data Path: ${appPaths.userDataDir}\n`;
     content += '\nIf you are having issues launching Minecraft, please check:\n';
     content += '1. Do you have Java installed?\n';
     content += '2. Do you have enough free disk space?\n';
@@ -1981,9 +2043,9 @@ function createTroubleshootingFile() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // First create troubleshooting file
-  createTroubleshootingFile();
+  await createTroubleshootingFile();
   
   // Then initialize the app
   initializeApp();
