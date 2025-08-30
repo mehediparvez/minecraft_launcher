@@ -1516,12 +1516,41 @@ function setupLaunchButton() {
           parallel: 2, // Limit parallel downloads to help with stuck connections
           skipValidation: true, // Skip file validation for faster launch
           forge: false, // Explicitly disable forge
+          // Override Mojang URLs to use correct endpoints
+          url: {
+            meta: 'https://piston-meta.mojang.com',
+            resource: 'https://resources.download.minecraft.net',
+            mavenForge: 'https://files.minecraftforge.net/maven/',
+            defaultRepoForge: 'https://libraries.minecraft.net/',
+            fallbackMaven: 'https://repo1.maven.org/maven2/'
+          },
           overrides: {
             detached: true,
             stdio: 'ignore',
             ...platformOptions
           }
         };
+        
+        // ===== COMPREHENSIVE MCLC DEBUG LOGGING =====
+        console.log('🔧 MCLC Debug - Complete Configuration:');
+        console.log('📍 Version Config:', JSON.stringify(versionConfig, null, 2));
+        console.log('🔐 Auth Info:', authInfo ? 'Present (Microsoft)' : 'Offline Mode');
+        console.log('☕ Java Path:', javaPath);
+        console.log('📁 Root Directory:', minecraftDir);
+        console.log('💾 Memory Settings:', `Min: ${minRam}, Max: ${maxRam}`);
+        console.log('⏱️ Timeout Settings:', `Main: ${opt.timeout}ms, Download: ${opt.downloadTimeout}ms`);
+        console.log('🔄 Retry Settings:', `Retries: ${opt.retries}, Parallel: ${opt.parallel}`);
+        console.log('🌐 URL Overrides:');
+        console.log('  - Meta URL:', opt.url.meta);
+        console.log('  - Resource URL:', opt.url.resource);
+        console.log('  - Maven Forge:', opt.url.mavenForge);
+        console.log('  - Default Repo:', opt.url.defaultRepoForge);
+        console.log('  - Fallback Maven:', opt.url.fallbackMaven);
+        console.log('🖥️ Platform Options:', JSON.stringify(platformOptions, null, 2));
+        console.log('⚙️ Skip Validation:', opt.skipValidation);
+        console.log('🔨 Forge Disabled:', !opt.forge);
+        console.log('📦 Bundled Assets Path:', appPaths.bundledAssets);
+        console.log('===== END MCLC DEBUG =====');
         
         // Use bundled assets if available
         if (appPaths.bundledAssets && fs.existsSync(appPaths.bundledAssets)) {
@@ -1549,6 +1578,18 @@ function setupLaunchButton() {
           }
         } else {
           console.log('⚠️ No bundled assets found, will download from internet');
+        }
+
+        // Clear potentially corrupted MCLC cache files
+        try {
+          const cacheDir = path.join(minecraftDir, 'cache', 'json');
+          const versionManifestCache = path.join(cacheDir, 'version_manifest.json');
+          if (fs.existsSync(versionManifestCache)) {
+            console.log('🧹 Clearing potentially corrupted version manifest cache...');
+            fs.unlinkSync(versionManifestCache);
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not clear MCLC cache:', error.message);
         }
         
         console.log('Launching with options:', JSON.stringify({
@@ -1594,6 +1635,18 @@ function setupLaunchButton() {
         
         console.log('🎯 Launcher.launch() called, process object:', minecraftProcess);
         
+        // Log MCLC version information
+        try {
+          const mclcPackage = require('minecraft-launcher-core/package.json');
+          console.log('📦 MCLC Version:', mclcPackage.version);
+          console.log('📅 MCLC Last Updated:', mclcPackage._lastModified || 'unknown');
+        } catch (e) {
+          console.log('⚠️ Could not read MCLC version:', e.message);
+        }
+        
+        // Log current timestamp for debugging
+        console.log('🕐 Launch timestamp:', new Date().toISOString());
+        
         // Add immediate debugging
         setTimeout(() => {
           console.log('⏰ 5 seconds after launch - checking status...');
@@ -1607,8 +1660,32 @@ function setupLaunchButton() {
           const statusElement = document.getElementById("status");
           console.log('Download screen display:', downloadScreen?.style.display);
           console.log('Status text:', statusElement?.textContent);
-        }, 15000);        Launcher.on('debug', (e) => {
+        }, 15000);
+        
+        // Enhanced MCLC event logging
+        Launcher.on('debug', (e) => {
           console.log('🐛 Launcher debug:', e);
+          
+          // Track specific MCLC operations
+          if (e.includes('Cached version_manifest.json')) {
+            console.log('📄 MCLC cached version manifest');
+          } else if (e.includes('Downloading version_manifest.json')) {
+            console.log('⬇️ MCLC downloading version manifest');
+          } else if (e.includes('version_manifest.json')) {
+            console.log('📋 MCLC version manifest operation:', e);
+          } else if (e.includes('Failed to start due to')) {
+            console.error('💥 MCLC CRITICAL ERROR:', e);
+            console.log('🔍 This error indicates JSON parsing failure from Mojang servers');
+            console.log('🌐 Checking if MCLC is using old URLs...');
+          } else if (e.includes('Using Java version')) {
+            console.log('☕ MCLC Java confirmed:', e);
+          } else if (e.includes('Parsed version from')) {
+            console.log('📝 MCLC parsed version data successfully');
+          } else if (e.includes('SyntaxError') || e.includes('Unexpected token')) {
+            console.error('🚨 JSON PARSING ERROR DETECTED:', e);
+            console.log('🔧 This suggests MCLC is receiving XML instead of JSON');
+            console.log('🌐 URLs being used by MCLC might be outdated');
+          }
         });
         
         Launcher.on('data', (e) => {
@@ -1645,6 +1722,21 @@ function setupLaunchButton() {
 
         Launcher.on('download', (e) => {
           console.log('📥 Download event:', e);
+          
+          // Log download details for debugging
+          if (typeof e === 'string') {
+            console.log('📄 Downloading file:', e);
+            
+            // Check if it's a manifest or important file
+            if (e.includes('version_manifest') || e.includes('manifest')) {
+              console.log('📋 MANIFEST DOWNLOAD:', e);
+            } else if (e.includes('.json')) {
+              console.log('📄 JSON DOWNLOAD:', e);
+            }
+          } else if (e && e.name) {
+            console.log('📦 Downloading:', e.name, 'Type:', e.type || 'unknown');
+          }
+          
           const fondoElement = document.getElementById("fondo");
           const downloadElement = document.getElementById("download-screen");
           const descargaElement = document.getElementById("descarga");
@@ -1658,6 +1750,17 @@ function setupLaunchButton() {
 
         Launcher.on('download-status', (e) => {
           console.log('📊 Download status:', e);
+          
+          // Enhanced download status logging
+          if (e && e.name) {
+            console.log(`📈 Progress: ${e.name} - ${e.current || 0}/${e.total || 'unknown'} bytes`);
+            
+            // Track manifest downloads specifically
+            if (e.name.includes('manifest') || e.name.includes('.json')) {
+              console.log('📋 JSON/Manifest download progress:', e);
+            }
+          }
+          
           const statusElement = document.getElementById("status");
           if (statusElement && e.type) {
             statusElement.textContent = `Descargando ${e.type} - ${selectedVersion.display}`;
