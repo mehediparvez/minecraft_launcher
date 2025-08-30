@@ -1564,7 +1564,7 @@ function setupLaunchButton() {
         // Test network connectivity before launch
         console.log('🌐 Testing network connectivity...');
         try {
-          fetch('https://launcher.mojang.com/mc/game/version_manifest.json', { 
+          fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json', { 
             method: 'HEAD', 
             timeout: 5000 
           })

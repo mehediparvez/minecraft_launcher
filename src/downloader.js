@@ -192,7 +192,7 @@ class AssetDownloader {
         console.log('All missing components downloaded successfully');
     }
 
-    
+
     async downloadAndExtract(url, targetDir, componentName) {
         return new Promise((resolve, reject) => {
             // Ensure target directory exists
@@ -286,7 +286,7 @@ class AssetDownloader {
         console.log('Downloading Minecraft core files...');
         
         const coreFiles = [
-            'https://launcher.mojang.com/v1/objects/37fd3c903861eeff3bc24b71eed48f828b5269c8/client.jar', // Example for 1.21.1
+            'https://piston-data.mojang.com/v1/objects/37fd3c903861eeff3bc24b71eed48f828b5269c8/client.jar', // Example for 1.21.1
             'https://piston-meta.mojang.com/v1/packages/177e49d3233cb6eac42f0495c0a48e719870c2ae/1.21.1.json'
         ];
 
