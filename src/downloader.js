@@ -56,19 +56,19 @@ class AssetDownloader {
         // Use portable Java distributions that don't require installation
         const urls = {
             win32: {
-                java8: `https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_windows_hotspot_8u392b08.zip`,
-                java17: `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jre_x64_windows_hotspot_17.0.9_9.zip`,
-                java21: `https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_windows_hotspot_21.0.1_12.zip`
+                java8: `https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_windows_hotspot_8u402b06.zip`,
+                java17: `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_windows_hotspot_17.0.10_7.zip`,
+                java21: `https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_windows_hotspot_21.0.2_13.zip`
             },
             linux: {
-                java8: `https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_linux_hotspot_8u392b08.tar.gz`,
-                java17: `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jre_x64_linux_hotspot_17.0.9_9.tar.gz`,
-                java21: `https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_linux_hotspot_21.0.1_12.tar.gz`
+                java8: `https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_linux_hotspot_8u402b06.tar.gz`,
+                java17: `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_linux_hotspot_17.0.10_7.tar.gz`,
+                java21: `https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_linux_hotspot_21.0.2_13.tar.gz`
             },
             darwin: {
-                java8: `https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_mac_hotspot_8u392b08.tar.gz`,
-                java17: `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jre_x64_mac_hotspot_17.0.9_9.tar.gz`,
-                java21: `https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_mac_hotspot_21.0.1_12.tar.gz`
+                java8: `https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_mac_hotspot_8u402b06.tar.gz`,
+                java17: `https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.10%2B7/OpenJDK17U-jre_x64_mac_hotspot_17.0.10_7.tar.gz`,
+                java21: `https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_mac_hotspot_21.0.2_13.tar.gz`
             }
         };
         
@@ -262,16 +262,16 @@ class AssetDownloader {
     async downloadJavaRuntime(version = '21', platform = process.platform) {
         const javaUrls = {
             'win32': {
-                '8': 'https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_windows_hotspot_8u392b08.zip',
-                '21': 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_windows_hotspot_21.0.1_12.zip'
+                '8': 'https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_windows_hotspot_8u402b06.zip',
+                '21': 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_windows_hotspot_21.0.2_13.zip'
             },
             'linux': {
-                '8': 'https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_linux_hotspot_8u392b08.tar.gz',
-                '21': 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_linux_hotspot_21.0.1_12.tar.gz'
+                '8': 'https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_linux_hotspot_8u402b06.tar.gz',
+                '21': 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_linux_hotspot_21.0.2_13.tar.gz'
             },
             'darwin': {
-                '8': 'https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u392-b08/OpenJDK8U-jre_x64_mac_hotspot_8u392b08.tar.gz',
-                '21': 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1%2B12/OpenJDK21U-jre_x64_mac_hotspot_21.0.1_12.tar.gz'
+                '8': 'https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u402-b06/OpenJDK8U-jre_x64_mac_hotspot_8u402b06.tar.gz',
+                '21': 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jre_x64_mac_hotspot_21.0.2_13.tar.gz'
             }
         };
 
@@ -468,6 +468,184 @@ class AssetDownloader {
     async downloadMinecraftFile(relativePath, targetPath) {
         // Implementation for downloading specific Minecraft files
         console.log(`Downloading ${relativePath} to ${targetPath}`);
+    }
+
+    // Download file with progress tracking
+    async downloadFile(url, destination, progressCallback) {
+        return new Promise((resolve, reject) => {
+            const protocol = url.startsWith('https:') ? https : http;
+            const file = fs.createWriteStream(destination);
+            
+            console.log(`Starting download: ${url}`);
+            
+            const request = protocol.get(url, (response) => {
+                console.log(`Download response status: ${response.statusCode}`);
+                
+                if (response.statusCode === 302 || response.statusCode === 301) {
+                    // Handle redirects
+                    console.log(`Redirecting to: ${response.headers.location}`);
+                    file.close();
+                    fs.unlinkSync(destination);
+                    this.downloadFile(response.headers.location, destination, progressCallback)
+                        .then(resolve)
+                        .catch(reject);
+                    return;
+                }
+                
+                if (response.statusCode !== 200) {
+                    file.close();
+                    fs.unlinkSync(destination);
+                    reject(new Error(`Failed to download ${url}: HTTP ${response.statusCode}`));
+                    return;
+                }
+
+                const totalSize = parseInt(response.headers['content-length'], 10);
+                let downloadedSize = 0;
+                
+                console.log(`Download size: ${totalSize ? (totalSize / 1024 / 1024).toFixed(2) + ' MB' : 'unknown'}`);
+
+                response.on('data', (chunk) => {
+                    downloadedSize += chunk.length;
+                    if (progressCallback && totalSize) {
+                        progressCallback({
+                            current: downloadedSize,
+                            total: totalSize,
+                            percentage: Math.round((downloadedSize / totalSize) * 100)
+                        });
+                    }
+                });
+
+                response.pipe(file);
+
+                file.on('finish', () => {
+                    file.close();
+                    console.log(`Download completed: ${destination}`);
+                    resolve();
+                });
+
+                file.on('error', (err) => {
+                    file.close();
+                    if (fs.existsSync(destination)) {
+                        fs.unlinkSync(destination);
+                    }
+                    reject(err);
+                });
+            });
+
+            request.on('error', (err) => {
+                file.close();
+                if (fs.existsSync(destination)) {
+                    fs.unlinkSync(destination);
+                }
+                reject(err);
+            });
+
+            request.setTimeout(60000, () => { // Increased timeout to 60 seconds
+                request.abort();
+                file.close();
+                if (fs.existsSync(destination)) {
+                    fs.unlinkSync(destination);
+                }
+                reject(new Error('Download timeout after 60 seconds'));
+            });
+        });
+    }
+
+    // Download and extract archive
+    async downloadAndExtract(url, targetDir, componentName) {
+        const fileName = path.basename(url);
+        const tempFile = path.join(targetDir, fileName);
+        
+        console.log(`Downloading ${componentName}...`);
+        await this.downloadFile(url, tempFile);
+        
+        console.log(`Extracting ${componentName}...`);
+        await this.extractArchive(tempFile, targetDir);
+        
+        // Clean up the downloaded archive
+        fs.unlinkSync(tempFile);
+    }
+
+    // Extract archive (zip/tar.gz)
+    async extractArchive(archivePath, extractDir) {
+        const path_module = require('path');
+        
+        console.log(`Extracting ${archivePath} to ${extractDir}`);
+        
+        // Ensure extract directory exists
+        fs.mkdirSync(extractDir, { recursive: true });
+        
+        if (archivePath.endsWith('.zip')) {
+            // Extract ZIP file
+            try {
+                const yauzl = require('yauzl');
+                
+                return new Promise((resolve, reject) => {
+                    yauzl.open(archivePath, { lazyEntries: true }, (err, zipfile) => {
+                        if (err) {
+                            reject(new Error(`Failed to open ZIP file: ${err.message}`));
+                            return;
+                        }
+
+                        zipfile.readEntry();
+                        zipfile.on('entry', (entry) => {
+                            const entryPath = path_module.join(extractDir, entry.fileName);
+                            
+                            if (/\/$/.test(entry.fileName)) {
+                                // Directory entry
+                                fs.mkdirSync(entryPath, { recursive: true });
+                                zipfile.readEntry();
+                            } else {
+                                // File entry
+                                fs.mkdirSync(path_module.dirname(entryPath), { recursive: true });
+                                zipfile.openReadStream(entry, (err, readStream) => {
+                                    if (err) {
+                                        reject(new Error(`Failed to read ZIP entry: ${err.message}`));
+                                        return;
+                                    }
+                                    const writeStream = fs.createWriteStream(entryPath);
+                                    readStream.pipe(writeStream);
+                                    writeStream.on('close', () => {
+                                        zipfile.readEntry();
+                                    });
+                                    writeStream.on('error', (err) => {
+                                        reject(new Error(`Failed to write ZIP entry: ${err.message}`));
+                                    });
+                                });
+                            }
+                        });
+
+                        zipfile.on('end', () => {
+                            console.log(`ZIP extraction completed: ${extractDir}`);
+                            resolve();
+                        });
+
+                        zipfile.on('error', (err) => {
+                            reject(new Error(`ZIP extraction error: ${err.message}`));
+                        });
+                    });
+                });
+            } catch (error) {
+                throw new Error(`ZIP extraction failed: ${error.message}`);
+            }
+        } else if (archivePath.endsWith('.tar.gz') || archivePath.endsWith('.tgz')) {
+            // Extract TAR.GZ file
+            try {
+                const tar = require('tar');
+                
+                await tar.extract({
+                    file: archivePath,
+                    cwd: extractDir,
+                    strip: 1 // Remove the top-level directory from the archive
+                });
+                
+                console.log(`TAR.GZ extraction completed: ${extractDir}`);
+            } catch (error) {
+                throw new Error(`TAR.GZ extraction failed: ${error.message}`);
+            }
+        } else {
+            throw new Error(`Unsupported archive format: ${archivePath}`);
+        }
     }
 
     // Progress tracking for downloads

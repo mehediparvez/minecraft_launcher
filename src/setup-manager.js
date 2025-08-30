@@ -86,7 +86,21 @@ class SetupManager {
                 this.isSetupComplete = true;
                 return { success: true };
             } catch (error) {
-                return { success: false, error: error.message };
+                console.error('Setup download failed:', error);
+                
+                // Provide more specific error messages
+                let userMessage = error.message;
+                if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
+                    userMessage = 'Unable to connect to download servers. Please check your internet connection and try again.';
+                } else if (error.message.includes('timeout')) {
+                    userMessage = 'Download timed out. Please check your internet connection and try again.';
+                } else if (error.message.includes('Java') && error.message.includes('not available')) {
+                    userMessage = 'Java download not available for your platform. Please install Java manually.';
+                } else if (error.message.includes('302') || error.message.includes('redirect')) {
+                    userMessage = 'Download server returned a redirect. The download link may be outdated.';
+                }
+                
+                return { success: false, error: userMessage };
             }
         });
 

@@ -307,19 +307,23 @@
                         </div>
                         <div class="download-item">
                             <span>Minecraft Assets</span>
-                            <span>${estimates.minecraftAssets}</span>
+                            <span>${estimates.minecraftAssets || 'undefined'}</span>
                         </div>
                         <div class="download-item">
                             <span>Minecraft Core Files</span>
-                            <span>${estimates.minecraftCore}</span>
+                            <span>${estimates.minecraftCore || '15 MB'}</span>
                         </div>
                         <div class="download-item">
                             <span>Fabric Loader</span>
-                            <span>${estimates.fabricLoader}</span>
+                            <span>${estimates.fabricLoader || '5 MB'}</span>
                         </div>
                     `;
                     
-                    document.getElementById('total-size').textContent = estimates.totalEstimate;
+                    document.getElementById('total-size').textContent = estimates.totalEstimate || '120 MB';
+                    
+                    // Update Java requirement
+                    document.getElementById('java-requirement').textContent = 'Required versions will be downloaded';
+                }
                 }
             } catch (error) {
                 console.error('Failed to load download info:', error);
