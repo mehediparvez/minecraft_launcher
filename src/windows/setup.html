@@ -302,12 +302,12 @@
                     
                     downloadList.innerHTML = `
                         <div class="download-item">
-                            <span>Java Runtime (Auto-detected)</span>
-                            <span id="java-requirement">Detecting...</span>
+                            <span>Java Runtime</span>
+                            <span id="java-requirement">${estimates.javaRequirement || 'Detecting...'}</span>
                         </div>
                         <div class="download-item">
                             <span>Minecraft Assets</span>
-                            <span>${estimates.minecraftAssets || 'undefined'}</span>
+                            <span>${estimates.minecraftAssets || '15 MB'}</span>
                         </div>
                         <div class="download-item">
                             <span>Minecraft Core Files</span>
@@ -321,12 +321,34 @@
                     
                     document.getElementById('total-size').textContent = estimates.totalEstimate || '120 MB';
                     
-                    // Update Java requirement
-                    document.getElementById('java-requirement').textContent = 'Required versions will be downloaded';
-                }
+                    // Show a helpful message if everything is already installed
+                    if (estimates.totalEstimate === 'Already installed') {
+                        document.querySelector('.subtitle').textContent = 'Checking installation... Setup may not be required.';
+                        document.querySelector('#welcome-step button').textContent = 'Continue';
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load download info:', error);
+                // Show fallback information
+                const downloadList = document.getElementById('download-list');
+                downloadList.innerHTML = `
+                    <div class="download-item">
+                        <span>Java Runtime</span>
+                        <span>45-55 MB</span>
+                    </div>
+                    <div class="download-item">
+                        <span>Minecraft Assets</span>
+                        <span>15 MB</span>
+                    </div>
+                    <div class="download-item">
+                        <span>Minecraft Core Files</span>
+                        <span>15 MB</span>
+                    </div>
+                    <div class="download-item">
+                        <span>Fabric Loader</span>
+                        <span>5 MB</span>
+                    </div>
+                `;
             }
         }
 

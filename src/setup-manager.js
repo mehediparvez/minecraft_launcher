@@ -66,8 +66,29 @@ class SetupManager {
         // Handle setup start
         ipcMain.handle('setup:start', async () => {
             try {
+                // Check what's actually needed
+                const status = await this.downloader.checkInstallationComplete();
                 const estimates = this.downloader.getDownloadSizeEstimates();
-                return { success: true, estimates };
+                
+                // Get more detailed information
+                const detailedInfo = {
+                    java8Needed: !status.components.java8,
+                    java21Needed: !status.components.java21,
+                    minecraftCoreNeeded: !status.components.minecraftCore,
+                    fabricLoaderNeeded: !status.components.fabricLoader,
+                    javaRequirement: this.getJavaRequirementText(status.components),
+                    minecraftAssets: estimates.minecraftCore || '15 MB',
+                    totalEstimate: this.calculateTotalSize(status.components, estimates)
+                };
+                
+                return { 
+                    success: true, 
+                    estimates: {
+                        ...estimates,
+                        ...detailedInfo
+                    },
+                    status 
+                };
             } catch (error) {
                 return { success: false, error: error.message };
             }
@@ -118,6 +139,32 @@ class SetupManager {
             const status = await this.downloader.checkInstallationComplete();
             return status;
         });
+    }
+
+    getJavaRequirementText(components) {
+        const needed = [];
+        if (!components.java8) needed.push('Java 8 (45 MB)');
+        if (!components.java21) needed.push('Java 21 (55 MB)');
+        
+        if (needed.length === 0) {
+            return 'Already installed';
+        } else if (needed.length === 1) {
+            return needed[0];
+        } else {
+            return needed.join(' + ');
+        }
+    }
+
+    calculateTotalSize(components, estimates) {
+        let total = 0;
+        
+        // Add sizes based on what's actually needed
+        if (!components.java8) total += 45; // MB
+        if (!components.java21) total += 55; // MB
+        if (!components.minecraftCore) total += 15; // MB
+        if (!components.fabricLoader) total += 5; // MB
+        
+        return total > 0 ? `${total} MB` : 'Already installed';
     }
 
     async waitForSetupCompletion() {
