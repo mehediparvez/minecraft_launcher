@@ -74,6 +74,17 @@ jobs:
           if [ -d "java/mac-x64" ]; then
             echo "✓ macOS Java directory found"
             ls -la java/mac-x64/ || echo "Unable to list java/mac-x64/"
+            # Check for macOS app bundle structure
+            if [ -d "java/mac-x64/java8/Contents" ]; then
+              echo "✓ macOS Java 8 app bundle structure detected"
+            elif [ -d "java/mac-x64/java8/bin" ]; then
+              echo "✓ macOS Java 8 standard structure detected"
+            fi
+            if [ -d "java/mac-x64/java21/Contents" ]; then
+              echo "✓ macOS Java 21 app bundle structure detected"
+            elif [ -d "java/mac-x64/java21/bin" ]; then
+              echo "✓ macOS Java 21 standard structure detected"
+            fi
           else
             echo "✗ macOS Java directory not found, will need to download"
           fi
@@ -178,8 +189,8 @@ jobs:
           echo "macOS Java structure:"
           if [ -d "java/mac-x64" ]; then
             find java/mac-x64 -type f -name "java*" | head -10
-            ls -la java/mac-x64/java8/bin/ || echo "java8/bin not found" 
-            ls -la java/mac-x64/java21/bin/ || echo "java21/bin not found"
+            ls -la java/mac-x64/java8/Contents/Home/bin/ || ls -la java/mac-x64/java8/bin/ || echo "java8/bin not found"
+            ls -la java/mac-x64/java21/Contents/Home/bin/ || ls -la java/mac-x64/java21/bin/ || echo "java21/bin not found"
           else
             echo "No macOS-specific Java found, checking generic Java:"
             ls -la java/java8/bin/ || echo "generic java8/bin not found"
@@ -248,9 +259,12 @@ jobs:
         elif [ "${{ matrix.platform }}" = "mac" ]; then
           echo "Verifying macOS Java runtimes..."
           
-          # Check platform-specific first, then generic
-          if [ -f "java/mac-x64/java8/bin/java" ]; then
-            echo "✓ Java 8 macOS runtime verified (platform-specific)"
+          # Check platform-specific first (macOS app bundle structure), then generic
+          if [ -f "java/mac-x64/java8/Contents/Home/bin/java" ]; then
+            echo "✓ Java 8 macOS runtime verified (platform-specific app bundle)"
+            java/mac-x64/java8/Contents/Home/bin/java -version
+          elif [ -f "java/mac-x64/java8/bin/java" ]; then
+            echo "✓ Java 8 macOS runtime verified (platform-specific standard)"
             java/mac-x64/java8/bin/java -version
           elif [ -f "java/java8/bin/java" ]; then
             echo "✓ Java 8 generic runtime found (will work on macOS)"
@@ -264,8 +278,11 @@ jobs:
             exit 1
           fi
           
-          if [ -f "java/mac-x64/java21/bin/java" ]; then
-            echo "✓ Java 21 macOS runtime verified (platform-specific)"
+          if [ -f "java/mac-x64/java21/Contents/Home/bin/java" ]; then
+            echo "✓ Java 21 macOS runtime verified (platform-specific app bundle)"
+            java/mac-x64/java21/Contents/Home/bin/java -version
+          elif [ -f "java/mac-x64/java21/bin/java" ]; then
+            echo "✓ Java 21 macOS runtime verified (platform-specific standard)"
             java/mac-x64/java21/bin/java -version
           elif [ -f "java/java21/bin/java" ]; then
             echo "✓ Java 21 generic runtime found (will work on macOS)"
