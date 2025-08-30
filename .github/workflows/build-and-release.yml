@@ -212,6 +212,8 @@ jobs:
             java/windows-x64/java8/bin/java.exe -version
           else
             echo "✗ Java 8 Windows runtime missing"
+            echo "Contents of java/windows-x64/java8/:"
+            ls -la java/windows-x64/java8/ || echo "Directory not found"
             exit 1
           fi
           
@@ -220,6 +222,8 @@ jobs:
             java/windows-x64/java21/bin/java.exe -version
           else
             echo "✗ Java 21 Windows runtime missing" 
+            echo "Contents of java/windows-x64/java21/:"
+            ls -la java/windows-x64/java21/ || echo "Directory not found"
             exit 1
           fi
           
@@ -232,6 +236,8 @@ jobs:
             java/linux-x64/java8/bin/java -version
           else
             echo "✗ Java 8 Linux runtime missing"
+            echo "Contents of java/linux-x64/java8/:"
+            ls -la java/linux-x64/java8/ || echo "Directory not found"
             exit 1
           fi
           
@@ -240,36 +246,42 @@ jobs:
             java/linux-x64/java21/bin/java -version
           else
             echo "✗ Java 21 Linux runtime missing"
+            echo "Contents of java/linux-x64/java21/:"
+            ls -la java/linux-x64/java21/ || echo "Directory not found"
             exit 1
           fi
           
         elif [ "${{ matrix.platform }}" = "mac" ]; then
           echo "Verifying macOS Java runtimes..."
           
-          # Check platform-specific only (no fallback to generic)
+          # Check for macOS app bundle structure (Contents/Home/bin/java)
           if [ -f "java/mac-x64/java8/Contents/Home/bin/java" ]; then
-            echo "✓ Java 8 macOS runtime verified (platform-specific app bundle)"
+            echo "✓ Java 8 macOS runtime verified (app bundle structure)"
             java/mac-x64/java8/Contents/Home/bin/java -version
-          elif [ -f "java/mac-x64/java8/bin/java" ]; then
-            echo "✓ Java 8 macOS runtime verified (platform-specific standard)"
-            java/mac-x64/java8/bin/java -version
           else
             echo "✗ Java 8 macOS runtime missing"
+            echo "Contents of java/mac-x64/:"
+            ls -la java/mac-x64/ || echo "mac-x64 directory not found"
             echo "Contents of java/mac-x64/java8/:"
-            ls -la java/mac-x64/java8/ || echo "Directory not found"
+            ls -la java/mac-x64/java8/ || echo "java8 directory not found"
+            if [ -d "java/mac-x64/java8/Contents" ]; then
+              echo "Contents/Home structure:"
+              ls -la java/mac-x64/java8/Contents/Home/bin/ || echo "Contents/Home/bin not found"
+            fi
             exit 1
           fi
           
           if [ -f "java/mac-x64/java21/Contents/Home/bin/java" ]; then
-            echo "✓ Java 21 macOS runtime verified (platform-specific app bundle)"
+            echo "✓ Java 21 macOS runtime verified (app bundle structure)"
             java/mac-x64/java21/Contents/Home/bin/java -version
-          elif [ -f "java/mac-x64/java21/bin/java" ]; then
-            echo "✓ Java 21 macOS runtime verified (platform-specific standard)"
-            java/mac-x64/java21/bin/java -version
           else
             echo "✗ Java 21 macOS runtime missing"
             echo "Contents of java/mac-x64/java21/:"
-            ls -la java/mac-x64/java21/ || echo "Directory not found"
+            ls -la java/mac-x64/java21/ || echo "java21 directory not found"
+            if [ -d "java/mac-x64/java21/Contents" ]; then
+              echo "Contents/Home structure:"
+              ls -la java/mac-x64/java21/Contents/Home/bin/ || echo "Contents/Home/bin not found"
+            fi
             exit 1
           fi
         fi
