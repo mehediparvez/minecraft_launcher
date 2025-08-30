@@ -43,108 +43,100 @@ jobs:
     - name: Install Dependencies
       run: npm ci
 
-    - name: Download Platform-Specific Java Runtimes
+    - name: Verify Existing Java Runtimes
       shell: bash
       run: |
-        echo "Downloading platform-specific Java runtimes..."
-        mkdir -p java assets
+        echo "Verifying existing Java runtimes in repository..."
+        echo "Current directory: $(pwd)"
+        echo "Platform: ${{ matrix.platform }}"
         
-        # Download only the Java runtimes needed for the current platform
+        # Check if Java runtimes already exist in the repository
         if [ "${{ matrix.platform }}" = "win" ]; then
-          echo "Downloading Windows Java runtimes..."
-          mkdir -p java/windows-x64
-          
-          # Java 8 Windows
-          echo "Downloading Java 8 for Windows..."
-          curl -L "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u422-b05/OpenJDK8U-jre_x64_windows_hotspot_8u422b05.zip" -o java8-win.zip
-          mkdir -p java/windows-x64/java8
-          unzip -q java8-win.zip -d java/windows-x64/
-          mv java/windows-x64/jdk8u422-b05-jre/* java/windows-x64/java8/
-          rm -rf java/windows-x64/jdk8u422-b05-jre java8-win.zip
-          
-          # Java 21 Windows  
-          echo "Downloading Java 21 for Windows..."
-          curl -L "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.4_7.zip" -o java21-win.zip
-          mkdir -p java/windows-x64/java21
-          unzip -q java21-win.zip -d java/windows-x64/
-          mv java/windows-x64/jdk-21.0.4+7-jre/* java/windows-x64/java21/
-          rm -rf java/windows-x64/jdk-21.0.4+7-jre java21-win.zip
+          echo "Checking Windows Java runtimes..."
+          if [ -d "java/windows-x64" ]; then
+            echo "✓ Windows Java directory found"
+            ls -la java/windows-x64/ || echo "Unable to list java/windows-x64/"
+          else
+            echo "✗ Windows Java directory not found, will need to download"
+          fi
           
         elif [ "${{ matrix.platform }}" = "linux" ]; then
-          echo "Downloading Linux Java runtimes..."
-          mkdir -p java/linux-x64
-          
-          # Java 8 Linux
-          echo "Downloading Java 8 for Linux..."
-          curl -L "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u422-b05/OpenJDK8U-jre_x64_linux_hotspot_8u422b05.tar.gz" -o java8-linux.tar.gz
-          mkdir -p java/linux-x64/java8
-          tar -xzf java8-linux.tar.gz -C java/linux-x64/
-          mv java/linux-x64/jdk8u422-b05-jre/* java/linux-x64/java8/
-          rm -rf java/linux-x64/jdk8u422-b05-jre java8-linux.tar.gz
-          
-          # Java 21 Linux
-          echo "Downloading Java 21 for Linux..."
-          curl -L "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.4_7.tar.gz" -o java21-linux.tar.gz
-          mkdir -p java/linux-x64/java21
-          tar -xzf java21-linux.tar.gz -C java/linux-x64/
-          mv java/linux-x64/jdk-21.0.4+7-jre/* java/linux-x64/java21/
-          rm -rf java/linux-x64/jdk-21.0.4+7-jre java21-linux.tar.gz
+          echo "Checking Linux Java runtimes..."
+          if [ -d "java/linux-x64" ]; then
+            echo "✓ Linux Java directory found"
+            ls -la java/linux-x64/ || echo "Unable to list java/linux-x64/"
+          else
+            echo "✗ Linux Java directory not found, will need to download"
+          fi
           
         elif [ "${{ matrix.platform }}" = "mac" ]; then
-          echo "Downloading macOS Java runtimes..."
-          mkdir -p java/mac-x64
-          
-          # Java 8 macOS
-          echo "Downloading Java 8 for macOS..."
-          curl -L "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u422-b05/OpenJDK8U-jre_x64_mac_hotspot_8u422b05.tar.gz" -o java8-mac.tar.gz
-          mkdir -p java/mac-x64/java8
-          tar -xzf java8-mac.tar.gz -C java/mac-x64/
-          # macOS Java has Contents/Home structure, so we need to handle it properly
-          if [ -d "java/mac-x64/jdk8u422-b05-jre/Contents/Home" ]; then
-            mv java/mac-x64/jdk8u422-b05-jre/Contents/Home/* java/mac-x64/java8/
+          echo "Checking macOS Java runtimes..."
+          if [ -d "java/mac-x64" ]; then
+            echo "✓ macOS Java directory found"
+            ls -la java/mac-x64/ || echo "Unable to list java/mac-x64/"
           else
-            mv java/mac-x64/jdk8u422-b05-jre/* java/mac-x64/java8/
+            echo "✗ macOS Java directory not found, will need to download"
           fi
-          rm -rf java/mac-x64/jdk8u422-b05-jre java8-mac.tar.gz
-          
-          # Java 21 macOS
-          echo "Downloading Java 21 for macOS..."
-          curl -L "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_mac_hotspot_21.0.4_7.tar.gz" -o java21-mac.tar.gz
-          mkdir -p java/mac-x64/java21
-          tar -xzf java21-mac.tar.gz -C java/mac-x64/
-          # macOS Java has Contents/Home structure, so we need to handle it properly
-          if [ -d "java/mac-x64/jdk-21.0.4+7-jre/Contents/Home" ]; then
-            mv java/mac-x64/jdk-21.0.4+7-jre/Contents/Home/* java/mac-x64/java21/
-          else
-            mv java/mac-x64/jdk-21.0.4+7-jre/* java/mac-x64/java21/
-          fi
-          rm -rf java/mac-x64/jdk-21.0.4+7-jre java21-mac.tar.gz
         fi
         
-        echo "Platform-specific Java download completed"
+        # Also check if we have the general Java runtime directories
+        if [ -d "java/java8" ]; then
+          echo "✓ Generic Java 8 runtime found"
+          ls -la java/java8/bin/ || echo "Unable to list java8/bin/"
+        fi
+        
+        if [ -d "java/java21" ]; then
+          echo "✓ Generic Java 21 runtime found"
+          ls -la java/java21/bin/ || echo "Unable to list java21/bin/"
+        fi
+        
+        echo "Java runtime verification completed"
 
-    - name: Download Minecraft Assets
+    - name: Verify Existing Minecraft Assets
       shell: bash
       run: |
-        echo "Downloading Minecraft core assets..."
-        mkdir -p assets/minecraft/versions/1.21.1
+        echo "Verifying existing Minecraft assets in repository..."
         
-        # Download version manifest
-        curl -L "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" -o assets/minecraft/version_manifest.json
+        # Check if assets already exist
+        if [ -d "assets" ]; then
+          echo "✓ Assets directory found"
+          ls -la assets/
+          
+          if [ -d "assets/minecraft" ]; then
+            echo "✓ Minecraft assets directory found"
+            ls -la assets/minecraft/
+          fi
+          
+          if [ -d "assets/fabric" ]; then
+            echo "✓ Fabric assets directory found"
+            ls -la assets/fabric/
+          fi
+          
+          if [ -d "assets/manifests" ]; then
+            echo "✓ Manifests directory found"
+            ls -la assets/manifests/
+          fi
+        else
+          echo "Creating assets directory structure..."
+          mkdir -p assets/minecraft/versions/1.21.1
+          mkdir -p assets/fabric
+          mkdir -p assets/manifests
+          
+          # Download version manifest
+          curl -L "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" -o assets/minecraft/version_manifest.json
+          
+          # Download Minecraft 1.21.1 version info
+          curl -L "https://piston-data.mojang.com/v1/objects/4707d00eb834b446575d89a61a11b5d548d8c001/1.21.1.json" -o assets/minecraft/versions/1.21.1/1.21.1.json
+          
+          # Download Fabric loader info
+          curl -L "https://meta.fabricmc.net/v2/versions/loader" -o assets/fabric/loader-versions.json
+          curl -L "https://meta.fabricmc.net/v2/versions/installer" -o assets/fabric/installer-versions.json
+          
+          # Create assets manifest
+          echo '{"minecraft": "1.21.1", "fabric": "latest", "java8": "1.8.0_422", "java21": "21.0.4"}' > assets/manifests/assets.json
+        fi
         
-        # Download Minecraft 1.21.1 version info
-        curl -L "https://piston-data.mojang.com/v1/objects/4707d00eb834b446575d89a61a11b5d548d8c001/1.21.1.json" -o assets/minecraft/versions/1.21.1/1.21.1.json
-        
-        # Download Fabric loader info
-        mkdir -p assets/fabric
-        curl -L "https://meta.fabricmc.net/v2/versions/loader" -o assets/fabric/loader-versions.json
-        curl -L "https://meta.fabricmc.net/v2/versions/installer" -o assets/fabric/installer-versions.json
-        
-        # Create assets manifest
-        mkdir -p assets/manifests
-        echo '{"minecraft": "1.21.1", "fabric": "latest", "java8": "1.8.0_422", "java21": "21.0.4"}' > assets/manifests/assets.json
-        
-        echo "Asset download completed"
+        echo "Asset verification completed"
 
     - name: Debug Java Structure Before Build
       shell: bash
@@ -153,82 +145,137 @@ jobs:
         echo "Current directory: $(pwd)"
         echo "Platform: ${{ matrix.platform }}"
         
-        # Show the structure we created
+        # Show the overall Java structure
+        echo "Overall Java directory structure:"
+        ls -la java/ || echo "java/ directory not found"
+        
+        # Show platform-specific structure
         if [ "${{ matrix.platform }}" = "win" ]; then
           echo "Windows Java structure:"
-          find java/windows-x64 -type f -name "java*" | head -10
-          ls -la java/windows-x64/java8/bin/ || echo "java8/bin not found"
-          ls -la java/windows-x64/java21/bin/ || echo "java21/bin not found"
+          if [ -d "java/windows-x64" ]; then
+            find java/windows-x64 -type f -name "java*" 2>/dev/null | head -10 || echo "Could not find Java executables"
+            ls -la java/windows-x64/java8/bin/ 2>/dev/null || echo "java8/bin not found"
+            ls -la java/windows-x64/java21/bin/ 2>/dev/null || echo "java21/bin not found"
+          else
+            echo "No Windows-specific Java found, checking generic Java:"
+            ls -la java/java8/bin/ 2>/dev/null || echo "generic java8/bin not found"
+            ls -la java/java21/bin/ 2>/dev/null || echo "generic java21/bin not found"
+          fi
+          
         elif [ "${{ matrix.platform }}" = "linux" ]; then
           echo "Linux Java structure:"
-          find java/linux-x64 -type f -name "java*" | head -10
-          ls -la java/linux-x64/java8/bin/ || echo "java8/bin not found"
-          ls -la java/linux-x64/java21/bin/ || echo "java21/bin not found"
+          if [ -d "java/linux-x64" ]; then
+            find java/linux-x64 -type f -name "java*" 2>/dev/null | head -10 || echo "Could not find Java executables"
+            ls -la java/linux-x64/java8/bin/ 2>/dev/null || echo "java8/bin not found"
+            ls -la java/linux-x64/java21/bin/ 2>/dev/null || echo "java21/bin not found"
+          else
+            echo "No Linux-specific Java found, checking generic Java:"
+            ls -la java/java8/bin/ 2>/dev/null || echo "generic java8/bin not found"
+            ls -la java/java21/bin/ 2>/dev/null || echo "generic java21/bin not found"
+          fi
+          
         elif [ "${{ matrix.platform }}" = "mac" ]; then
           echo "macOS Java structure:"
-          find java/mac-x64 -type f -name "java*" | head -10
-          ls -la java/mac-x64/java8/bin/ || echo "java8/bin not found" 
-          ls -la java/mac-x64/java21/bin/ || echo "java21/bin not found"
+          if [ -d "java/mac-x64" ]; then
+            find java/mac-x64 -type f -name "java*" 2>/dev/null | head -10 || echo "Could not find Java executables"
+            ls -la java/mac-x64/java8/bin/ 2>/dev/null || echo "java8/bin not found" 
+            ls -la java/mac-x64/java21/bin/ 2>/dev/null || echo "java21/bin not found"
+          else
+            echo "No macOS-specific Java found, checking generic Java:"
+            ls -la java/java8/bin/ 2>/dev/null || echo "generic java8/bin not found"
+            ls -la java/java21/bin/ 2>/dev/null || echo "generic java21/bin not found"
+          fi
         fi
 
     - name: Verify Downloaded Assets
       shell: bash
       run: |
-        echo "Verifying downloaded Java runtimes and assets..."
+        echo "Verifying Java runtimes and assets..."
         
         # Verify Java runtimes for current platform
         if [ "${{ matrix.platform }}" = "win" ]; then
           echo "Verifying Windows Java runtimes..."
+          
+          # Check platform-specific first, then generic
           if [ -f "java/windows-x64/java8/bin/java.exe" ]; then
-            echo "✓ Java 8 Windows runtime verified"
+            echo "✓ Java 8 Windows runtime verified (platform-specific)"
             java/windows-x64/java8/bin/java.exe -version
+          elif [ -f "java/java8/bin/java" ]; then
+            echo "✓ Java 8 generic runtime found (will work on Windows)"
+            java/java8/bin/java -version
           else
-            echo "✗ Java 8 Windows runtime missing"
+            echo "✗ Java 8 runtime missing"
             exit 1
           fi
+          
           if [ -f "java/windows-x64/java21/bin/java.exe" ]; then
-            echo "✓ Java 21 Windows runtime verified"
+            echo "✓ Java 21 Windows runtime verified (platform-specific)"
             java/windows-x64/java21/bin/java.exe -version
+          elif [ -f "java/java21/bin/java" ]; then
+            echo "✓ Java 21 generic runtime found (will work on Windows)"
+            java/java21/bin/java -version
           else
-            echo "✗ Java 21 Windows runtime missing" 
+            echo "✗ Java 21 runtime missing" 
             exit 1
           fi
           
         elif [ "${{ matrix.platform }}" = "linux" ]; then
           echo "Verifying Linux Java runtimes..."
+          
+          # Check platform-specific first, then generic
           if [ -f "java/linux-x64/java8/bin/java" ]; then
-            echo "✓ Java 8 Linux runtime verified"
+            echo "✓ Java 8 Linux runtime verified (platform-specific)"
             java/linux-x64/java8/bin/java -version
+          elif [ -f "java/java8/bin/java" ]; then
+            echo "✓ Java 8 generic runtime found (will work on Linux)"
+            java/java8/bin/java -version
           else
-            echo "✗ Java 8 Linux runtime missing"
+            echo "✗ Java 8 runtime missing"
             exit 1
           fi
+          
           if [ -f "java/linux-x64/java21/bin/java" ]; then
-            echo "✓ Java 21 Linux runtime verified"
+            echo "✓ Java 21 Linux runtime verified (platform-specific)"
             java/linux-x64/java21/bin/java -version
+          elif [ -f "java/java21/bin/java" ]; then
+            echo "✓ Java 21 generic runtime found (will work on Linux)"
+            java/java21/bin/java -version
           else
-            echo "✗ Java 21 Linux runtime missing"
+            echo "✗ Java 21 runtime missing"
             exit 1
           fi
           
         elif [ "${{ matrix.platform }}" = "mac" ]; then
           echo "Verifying macOS Java runtimes..."
+          
+          # Check platform-specific first, then generic
           if [ -f "java/mac-x64/java8/bin/java" ]; then
-            echo "✓ Java 8 macOS runtime verified"
+            echo "✓ Java 8 macOS runtime verified (platform-specific)"
             java/mac-x64/java8/bin/java -version
+          elif [ -f "java/java8/bin/java" ]; then
+            echo "✓ Java 8 generic runtime found (will work on macOS)"
+            java/java8/bin/java -version
           else
             echo "✗ Java 8 macOS runtime missing"
             echo "Contents of java/mac-x64/java8/:"
             ls -la java/mac-x64/java8/ || echo "Directory not found"
+            echo "Contents of java/java8/:"
+            ls -la java/java8/ || echo "Directory not found"
             exit 1
           fi
+          
           if [ -f "java/mac-x64/java21/bin/java" ]; then
-            echo "✓ Java 21 macOS runtime verified"
+            echo "✓ Java 21 macOS runtime verified (platform-specific)"
             java/mac-x64/java21/bin/java -version
+          elif [ -f "java/java21/bin/java" ]; then
+            echo "✓ Java 21 generic runtime found (will work on macOS)"
+            java/java21/bin/java -version
           else
             echo "✗ Java 21 macOS runtime missing"
             echo "Contents of java/mac-x64/java21/:"
             ls -la java/mac-x64/java21/ || echo "Directory not found"
+            echo "Contents of java/java21/:"
+            ls -la java/java21/ || echo "Directory not found"
             exit 1
           fi
         fi
@@ -244,7 +291,13 @@ jobs:
         
         # Display sizes
         echo "=== Final Asset Sizes ==="
-        du -sh java/${{ matrix.platform == 'win' && 'windows-x64' || matrix.platform == 'linux' && 'linux-x64' || 'mac-x64' }}/* || true
+        if [ "${{ matrix.platform }}" = "win" ]; then
+          du -sh java/windows-x64/* 2>/dev/null || du -sh java/java* 2>/dev/null || echo "No Java runtimes found"
+        elif [ "${{ matrix.platform }}" = "linux" ]; then
+          du -sh java/linux-x64/* 2>/dev/null || du -sh java/java* 2>/dev/null || echo "No Java runtimes found"
+        elif [ "${{ matrix.platform }}" = "mac" ]; then
+          du -sh java/mac-x64/* 2>/dev/null || du -sh java/java* 2>/dev/null || echo "No Java runtimes found"
+        fi
         du -sh assets/* || true
 
     - name: Create Release Directory
@@ -289,14 +342,14 @@ jobs:
         # Check for common electron-builder output locations
         if [ -d "dist" ]; then
           echo "Contents of dist folder:"
-          find dist -type f | head -20
+          find dist -type f 2>/dev/null | head -20 || echo "Could not list dist contents"
         else
           echo "No dist folder found"
         fi
         
         if [ -d "releases" ]; then
           echo "Contents of releases folder:"
-          find releases -type f | head -20
+          find releases -type f 2>/dev/null | head -20 || echo "Could not list releases contents"
         else
           echo "No releases folder found"
         fi
@@ -304,49 +357,53 @@ jobs:
         # Try to find any built packages
         echo ""
         echo "Searching for built packages..."
-        find . -name "*.exe" -o -name "*.AppImage" -o -name "*.dmg" -o -name "*.deb" | head -10
+        find . -name "*.exe" -o -name "*.AppImage" -o -name "*.dmg" -o -name "*.deb" 2>/dev/null | head -10 || echo "No package files found"
         
         # Try to examine the built package to see if Java is included
         if [ "${{ matrix.platform }}" = "win" ]; then
           echo "Looking for Windows executable structure..."
-          find . -name "*.exe" | head -5
+          find . -name "*.exe" 2>/dev/null | head -5 || echo "No Windows executables found"
           # Check if we have win-unpacked directory
           if [ -d "releases/win-unpacked" ]; then
             echo "Windows unpacked directory found:"
-            ls -la releases/win-unpacked/ | head -10
+            ls -la releases/win-unpacked/ 2>/dev/null | head -10 || echo "Could not list win-unpacked"
             if [ -d "releases/win-unpacked/resources" ]; then
               echo "Windows resources directory:"
-              ls -la releases/win-unpacked/resources/
+              ls -la releases/win-unpacked/resources/ 2>/dev/null || echo "Could not list resources"
               if [ -d "releases/win-unpacked/resources/java" ]; then
                 echo "Java structure in Windows build:"
-                find releases/win-unpacked/resources/java -type d | head -10
+                find releases/win-unpacked/resources/java -type d 2>/dev/null | head -10 || echo "Could not list Java structure"
               fi
             fi
           fi
         elif [ "${{ matrix.platform }}" = "linux" ]; then
           echo "Looking for Linux package structure..."
-          find . -name "*.AppImage" | head -5
-          find . -name "*.deb" | head -5
+          find . -name "*.AppImage" 2>/dev/null | head -5 || echo "No AppImage files found"
+          find . -name "*.deb" 2>/dev/null | head -5 || echo "No deb files found"
           # Check linux unpacked directory
           if [ -d "releases/linux-unpacked" ]; then
             echo "Linux unpacked directory found:"
-            ls -la releases/linux-unpacked/ | head -10
+            ls -la releases/linux-unpacked/ 2>/dev/null | head -10 || echo "Could not list linux-unpacked"
             if [ -d "releases/linux-unpacked/resources" ]; then
               echo "Linux resources directory:"
-              ls -la releases/linux-unpacked/resources/
+              ls -la releases/linux-unpacked/resources/ 2>/dev/null || echo "Could not list resources"
               if [ -d "releases/linux-unpacked/resources/java" ]; then
                 echo "Java structure in Linux build:"
-                find releases/linux-unpacked/resources/java -type d | head -10
+                find releases/linux-unpacked/resources/java -type d 2>/dev/null | head -10 || echo "Could not list Java structure"
               fi
             fi
           fi
         elif [ "${{ matrix.platform }}" = "mac" ]; then
           echo "Looking for macOS package structure..."
-          find . -name "*.dmg" | head -5
+          find . -name "*.dmg" -o -name "*.zip" 2>/dev/null | head -5 || echo "No macOS packages found"
           # Check mac unpacked directory
           if [ -d "releases/mac" ]; then
             echo "Mac directory found:"
-            ls -la releases/mac/ | head -10
+            ls -la releases/mac/ 2>/dev/null | head -10 || echo "Could not list mac directory"
+          fi
+          if [ -d "dist/mac" ]; then
+            echo "Dist mac directory found:"
+            ls -la dist/mac/ 2>/dev/null | head -10 || echo "Could not list dist/mac directory"
           fi
         fi
 
@@ -361,7 +418,7 @@ jobs:
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
           echo "Looking for Windows artifacts..."
           # Try multiple possible locations
-          find . -name "*.exe" -type f | head -5
+          find . -name "*.exe" -type f 2>/dev/null | head -5 || echo "No exe files found"
           
           # Copy from dist if it exists
           if [ -d "dist" ]; then
@@ -382,7 +439,7 @@ jobs:
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
           echo "Looking for Linux artifacts..."
           # Try multiple possible locations
-          find . -name "*.AppImage" -o -name "*.deb" | head -5
+          find . -name "*.AppImage" -o -name "*.deb" 2>/dev/null | head -5 || echo "No Linux packages found"
           
           # Copy from dist if it exists
           if [ -d "dist" ]; then
@@ -403,7 +460,7 @@ jobs:
         elif [ "${{ matrix.os }}" = "macos-latest" ]; then
           echo "Looking for macOS artifacts..."
           # Try multiple possible locations
-          find . -name "*.dmg" | head -5
+          find . -name "*.dmg" -o -name "*.zip" 2>/dev/null | head -5 || echo "No macOS packages found"
           
           # Copy from dist if it exists
           if [ -d "dist" ]; then
@@ -431,9 +488,9 @@ jobs:
       shell: bash
       run: |
         echo "=== Built Files ==="
-        find ../installers -type f -name "*" || echo "No files in installers directory"
+        find ../installers -type f -name "*" 2>/dev/null || echo "No files in installers directory"
         echo "=== Dist Directory ==="
-        find dist -type f -name "*" || echo "No files in dist directory"
+        find dist -type f -name "*" 2>/dev/null || echo "No files in dist directory"
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
