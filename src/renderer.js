@@ -1530,32 +1530,60 @@ function setupLaunchButton() {
           }
         };
         
-        // Use bundled assets if available
-        if (appPaths.bundledAssets && fs.existsSync(appPaths.bundledAssets)) {
-          console.log('✅ Using bundled assets from:', appPaths.bundledAssets);
+        // Use bundled manifests from assets/manifests/
+        const bundledManifestsDir = path.resolve(__dirname, '..', 'assets', 'manifests');
+        console.log('Checking for bundled manifests in:', bundledManifestsDir);
+        
+        if (fs.existsSync(bundledManifestsDir)) {
+          console.log('✅ Found bundled manifests directory');
           
           // Check for bundled version manifest
-          const bundledVersionManifest = path.join(appPaths.bundledAssets, 'minecraft', 'versions', selectedVersion.number, `${selectedVersion.number}.json`);
-          if (fs.existsSync(bundledVersionManifest)) {
-            console.log('✅ Found bundled version manifest:', bundledVersionManifest);
-            // minecraft-launcher-core will use this automatically if it exists in the minecraft directory
-          }
+          const bundledVersionManifest = path.join(bundledManifestsDir, `${selectedVersion.number}.json`);
+          const bundledVersionsManifest = path.join(bundledManifestsDir, 'version_manifest.json');
           
-          // Copy bundled assets to minecraft directory if they don't exist
-          const targetVersionDir = path.join(minecraftDir, 'versions', selectedVersion.number);
-          const targetVersionFile = path.join(targetVersionDir, `${selectedVersion.number}.json`);
-          
-          if (!fs.existsSync(targetVersionFile)) {
+          if (fs.existsSync(bundledVersionManifest) && fs.existsSync(bundledVersionsManifest)) {
+            console.log('✅ Found bundled manifests:', {
+              version: bundledVersionManifest,
+              versions: bundledVersionsManifest
+            });
+            
+            // Copy bundled manifests to minecraft directory
+            const targetVersionDir = path.join(minecraftDir, 'versions', selectedVersion.number);
+            const targetVersionFile = path.join(targetVersionDir, `${selectedVersion.number}.json`);
+            const targetVersionsFile = path.join(minecraftDir, 'version_manifest.json');
+            
             try {
+              // Copy version manifest
               fs.mkdirSync(targetVersionDir, { recursive: true });
-              fs.copyFileSync(bundledVersionManifest, targetVersionFile);
-              console.log('✅ Copied bundled version manifest to minecraft directory');
+              if (!fs.existsSync(targetVersionFile)) {
+                fs.copyFileSync(bundledVersionManifest, targetVersionFile);
+                console.log('✅ Copied bundled version manifest to minecraft directory');
+              }
+              
+              // Copy versions manifest
+              if (!fs.existsSync(targetVersionsFile)) {
+                fs.copyFileSync(bundledVersionsManifest, targetVersionsFile);
+                console.log('✅ Copied bundled versions manifest to minecraft directory');
+              }
+              
+              // Override MCLC to use local manifests
+              opt.overrides.url = {
+                ...opt.overrides.url,
+                meta: `file://${minecraftDir}`,
+                versions: `file://${targetVersionsFile}`
+              };
+              
             } catch (error) {
-              console.warn('⚠️ Could not copy bundled version manifest:', error.message);
+              console.warn('⚠️ Could not copy bundled manifests:', error.message);
             }
+          } else {
+            console.log('⚠️ Missing bundled manifest files:', {
+              version: fs.existsSync(bundledVersionManifest),
+              versions: fs.existsSync(bundledVersionsManifest)
+            });
           }
         } else {
-          console.log('⚠️ No bundled assets found, will download from internet');
+          console.log('⚠️ No bundled manifests found, will download from internet');
         }
         
         console.log('Launching with options:', JSON.stringify({

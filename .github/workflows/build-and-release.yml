@@ -133,11 +133,13 @@ jobs:
           mkdir -p assets/fabric
           mkdir -p assets/manifests
           
-          # Download version manifest
+          # Download version manifest to both locations for compatibility
           curl -L "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" -o assets/minecraft/version_manifest.json
+          curl -L "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" -o assets/manifests/version_manifest.json
           
-          # Download Minecraft 1.21.1 version info
-          curl -L "https://piston-data.mojang.com/v1/objects/4707d00eb834b446575d89a61a11b5d548d8c001/1.21.1.json" -o assets/minecraft/versions/1.21.1/1.21.1.json
+          # Download Minecraft 1.21.1 version info to both locations
+          curl -L "https://piston-meta.mojang.com/v1/packages/0802493292eb060c2899a710c262a352068d4e36/1.21.1.json" -o assets/minecraft/versions/1.21.1/1.21.1.json
+          curl -L "https://piston-meta.mojang.com/v1/packages/0802493292eb060c2899a710c262a352068d4e36/1.21.1.json" -o assets/manifests/1.21.1.json
           
           # Download Fabric loader info
           curl -L "https://meta.fabricmc.net/v2/versions/loader" -o assets/fabric/loader-versions.json
