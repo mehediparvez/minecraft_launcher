@@ -196,86 +196,57 @@ jobs:
         if [ "${{ matrix.platform }}" = "win" ]; then
           echo "Verifying Windows Java runtimes..."
           
-          # Check platform-specific first, then generic
           if [ -f "java/windows-x64/java8/bin/java.exe" ]; then
-            echo "✓ Java 8 Windows runtime verified (platform-specific)"
+            echo "✓ Java 8 Windows runtime verified"
             java/windows-x64/java8/bin/java.exe -version
-          elif [ -f "java/java8/bin/java" ]; then
-            echo "✓ Java 8 generic runtime found (will work on Windows)"
-            java/java8/bin/java -version
           else
-            echo "✗ Java 8 runtime missing"
+            echo "✗ Java 8 Windows runtime missing"
             exit 1
           fi
           
           if [ -f "java/windows-x64/java21/bin/java.exe" ]; then
-            echo "✓ Java 21 Windows runtime verified (platform-specific)"
+            echo "✓ Java 21 Windows runtime verified"
             java/windows-x64/java21/bin/java.exe -version
-          elif [ -f "java/java21/bin/java" ]; then
-            echo "✓ Java 21 generic runtime found (will work on Windows)"
-            java/java21/bin/java -version
           else
-            echo "✗ Java 21 runtime missing" 
+            echo "✗ Java 21 Windows runtime missing"
             exit 1
           fi
           
         elif [ "${{ matrix.platform }}" = "linux" ]; then
           echo "Verifying Linux Java runtimes..."
           
-          # Check platform-specific first, then generic
           if [ -f "java/linux-x64/java8/bin/java" ]; then
-            echo "✓ Java 8 Linux runtime verified (platform-specific)"
+            echo "✓ Java 8 Linux runtime verified"
             java/linux-x64/java8/bin/java -version
-          elif [ -f "java/java8/bin/java" ]; then
-            echo "✓ Java 8 generic runtime found (will work on Linux)"
-            java/java8/bin/java -version
           else
-            echo "✗ Java 8 runtime missing"
+            echo "✗ Java 8 Linux runtime missing"
             exit 1
           fi
           
           if [ -f "java/linux-x64/java21/bin/java" ]; then
-            echo "✓ Java 21 Linux runtime verified (platform-specific)"
+            echo "✓ Java 21 Linux runtime verified"
             java/linux-x64/java21/bin/java -version
-          elif [ -f "java/java21/bin/java" ]; then
-            echo "✓ Java 21 generic runtime found (will work on Linux)"
-            java/java21/bin/java -version
           else
-            echo "✗ Java 21 runtime missing"
+            echo "✗ Java 21 Linux runtime missing"
             exit 1
           fi
           
         elif [ "${{ matrix.platform }}" = "mac" ]; then
           echo "Verifying macOS Java runtimes..."
           
-          # Check platform-specific first, then generic
-          if [ -f "java/mac-x64/java8/bin/java" ]; then
-            echo "✓ Java 8 macOS runtime verified (platform-specific)"
-            java/mac-x64/java8/bin/java -version
-          elif [ -f "java/java8/bin/java" ]; then
-            echo "✓ Java 8 generic runtime found (will work on macOS)"
-            java/java8/bin/java -version
+          if [ -f "java/mac-x64/java8/Contents/Home/bin/java" ]; then
+            echo "✓ Java 8 macOS runtime verified"
+            java/mac-x64/java8/Contents/Home/bin/java -version
           else
             echo "✗ Java 8 macOS runtime missing"
-            echo "Contents of java/mac-x64/java8/:"
-            ls -la java/mac-x64/java8/ || echo "Directory not found"
-            echo "Contents of java/java8/:"
-            ls -la java/java8/ || echo "Directory not found"
             exit 1
           fi
           
-          if [ -f "java/mac-x64/java21/bin/java" ]; then
-            echo "✓ Java 21 macOS runtime verified (platform-specific)"
-            java/mac-x64/java21/bin/java -version
-          elif [ -f "java/java21/bin/java" ]; then
-            echo "✓ Java 21 generic runtime found (will work on macOS)"
-            java/java21/bin/java -version
+          if [ -f "java/mac-x64/java21/Contents/Home/bin/java" ]; then
+            echo "✓ Java 21 macOS runtime verified"
+            java/mac-x64/java21/Contents/Home/bin/java -version
           else
             echo "✗ Java 21 macOS runtime missing"
-            echo "Contents of java/mac-x64/java21/:"
-            ls -la java/mac-x64/java21/ || echo "Directory not found"
-            echo "Contents of java/java21/:"
-            ls -la java/java21/ || echo "Directory not found"
             exit 1
           fi
         fi
