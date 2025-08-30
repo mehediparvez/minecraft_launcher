@@ -535,22 +535,6 @@ app.whenReady().then(async () => {
       bundledAssets: process.resourcesPath ? path.join(process.resourcesPath, 'assets') : null
     };
   });
-
-  // Handle loading saved credentials
-  ipcMain.handle('minecraft:loadSavedCredentials', async () => {
-    try {
-      // Try to load saved Microsoft auth credentials
-      if (minecraftAuth && typeof minecraftAuth.loadSavedCredentials === 'function') {
-        return await minecraftAuth.loadSavedCredentials();
-      } else {
-        console.log('No saved credentials available');
-        return null;
-      }
-    } catch (error) {
-      console.error('Error loading saved credentials:', error);
-      return null;
-    }
-  });
   
   ipcMain.handle('debug:testLogin', async (event, username) => {
     try {
