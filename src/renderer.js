@@ -1516,19 +1516,10 @@ function setupLaunchButton() {
           parallel: 2, // Limit parallel downloads to help with stuck connections
           skipValidation: true, // Skip file validation for faster launch
           forge: false, // Explicitly disable forge
+          clientPackage: null, // Force MCLC to use local files only
           overrides: {
             detached: true,
             stdio: 'ignore',
-            url: {
-              meta: 'https://piston-meta.mojang.com',
-              resource: 'https://resources.download.minecraft.net',
-              mavenForge: 'https://files.minecraftforge.net/maven/',
-              defaultRepoForge: 'https://libraries.minecraft.net/',
-              fallbackMaven: 'https://search.maven.org/remotecontent?filepath=',
-              // Override old deprecated URLs
-              versions: 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json',
-              versionManifest: 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'
-            },
             ...platformOptions
           }
         };
@@ -1577,35 +1568,31 @@ function setupLaunchButton() {
             try {
               // Copy version manifest
               fs.mkdirSync(targetVersionDir, { recursive: true });
-              if (!fs.existsSync(targetVersionFile)) {
-                fs.copyFileSync(bundledVersionManifest, targetVersionFile);
-                console.log('✅ Copied bundled version manifest to minecraft directory');
-              }
+              fs.copyFileSync(bundledVersionManifest, targetVersionFile);
+              console.log('✅ Copied bundled version manifest to minecraft directory');
               
               // Copy versions manifest
-              if (!fs.existsSync(targetVersionsFile)) {
-                fs.copyFileSync(bundledVersionsManifest, targetVersionsFile);
-                console.log('✅ Copied bundled versions manifest to minecraft directory');
-              }
+              fs.copyFileSync(bundledVersionsManifest, targetVersionsFile);
+              console.log('✅ Copied bundled versions manifest to minecraft directory');
               
-              // Override MCLC to use local manifests
-              opt.overrides.url = {
-                ...opt.overrides.url,
-                meta: `file://${minecraftDir}`,
-                versions: `file://${targetVersionsFile}`
-              };
+              // Force MCLC to use only local files by completely removing online capabilities
+              opt.clientPackage = null;
+              opt.downloadManifest = false;
               
             } catch (error) {
-              console.warn('⚠️ Could not copy bundled manifests:', error.message);
+              console.error('❌ Error copying bundled manifests:', error);
+              throw new Error(`Failed to setup bundled manifests: ${error.message}`);
             }
           } else {
-            console.log('⚠️ Missing bundled manifest files:', {
+            console.log('❌ Missing bundled manifest files:', {
               version: fs.existsSync(bundledVersionManifest),
               versions: fs.existsSync(bundledVersionsManifest)
             });
+            throw new Error('Required bundled manifest files are missing. Cannot launch without manifest files.');
           }
         } else {
-          console.log('⚠️ No bundled manifests found, will download from internet');
+          console.error('❌ No bundled manifests directory found!');
+          throw new Error('Bundled manifests directory not found. The application may not be properly installed.');
         }
         
         console.log('Launching with options:', JSON.stringify({
@@ -1632,19 +1619,6 @@ function setupLaunchButton() {
           }
         } catch (error) {
           console.error('❌ Error checking minecraft directory:', error);
-        }
-        
-        // Test network connectivity before launch
-        console.log('🌐 Testing network connectivity...');
-        try {
-          fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json', { 
-            method: 'HEAD', 
-            timeout: 5000 
-          })
-          .then(() => console.log('✅ Network connectivity OK'))
-          .catch(err => console.warn('⚠️ Network connectivity issue:', err.message));
-        } catch (e) {
-          console.warn('⚠️ Network test failed:', e.message);
         }
 
         const minecraftProcess = Launcher.launch(opt);
