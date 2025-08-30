@@ -43,68 +43,168 @@ jobs:
     - name: Install Dependencies
       run: npm ci
 
-    - name: Verify Pre-bundled Assets
+    - name: Download Platform-Specific Java Runtimes
       shell: bash
       run: |
-        echo "Verifying pre-bundled Java runtimes and assets..."
+        echo "Downloading platform-specific Java runtimes..."
+        mkdir -p java assets
         
-        # Check if Java runtimes exist for current platform
+        # Download only the Java runtimes needed for the current platform
         if [ "${{ matrix.platform }}" = "win" ]; then
-          echo "Checking Windows Java runtimes..."
+          echo "Downloading Windows Java runtimes..."
+          mkdir -p java/windows-x64
+          
+          # Java 8 Windows
+          echo "Downloading Java 8 for Windows..."
+          curl -L "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u422-b05/OpenJDK8U-jre_x64_windows_hotspot_8u422b05.zip" -o java8-win.zip
+          mkdir -p java/windows-x64/java8
+          unzip -q java8-win.zip -d java/windows-x64/
+          mv java/windows-x64/jdk8u422-b05-jre/* java/windows-x64/java8/
+          rm -rf java/windows-x64/jdk8u422-b05-jre java8-win.zip
+          
+          # Java 21 Windows  
+          echo "Downloading Java 21 for Windows..."
+          curl -L "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_windows_hotspot_21.0.4_7.zip" -o java21-win.zip
+          mkdir -p java/windows-x64/java21
+          unzip -q java21-win.zip -d java/windows-x64/
+          mv java/windows-x64/jdk-21.0.4+7-jre/* java/windows-x64/java21/
+          rm -rf java/windows-x64/jdk-21.0.4+7-jre java21-win.zip
+          
+        elif [ "${{ matrix.platform }}" = "linux" ]; then
+          echo "Downloading Linux Java runtimes..."
+          mkdir -p java/linux-x64
+          
+          # Java 8 Linux
+          echo "Downloading Java 8 for Linux..."
+          curl -L "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u422-b05/OpenJDK8U-jre_x64_linux_hotspot_8u422b05.tar.gz" -o java8-linux.tar.gz
+          mkdir -p java/linux-x64/java8
+          tar -xzf java8-linux.tar.gz -C java/linux-x64/
+          mv java/linux-x64/jdk8u422-b05-jre/* java/linux-x64/java8/
+          rm -rf java/linux-x64/jdk8u422-b05-jre java8-linux.tar.gz
+          
+          # Java 21 Linux
+          echo "Downloading Java 21 for Linux..."
+          curl -L "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.4_7.tar.gz" -o java21-linux.tar.gz
+          mkdir -p java/linux-x64/java21
+          tar -xzf java21-linux.tar.gz -C java/linux-x64/
+          mv java/linux-x64/jdk-21.0.4+7-jre/* java/linux-x64/java21/
+          rm -rf java/linux-x64/jdk-21.0.4+7-jre java21-linux.tar.gz
+          
+        elif [ "${{ matrix.platform }}" = "mac" ]; then
+          echo "Downloading macOS Java runtimes..."
+          mkdir -p java/mac-x64
+          
+          # Java 8 macOS
+          echo "Downloading Java 8 for macOS..."
+          curl -L "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u422-b05/OpenJDK8U-jre_x64_mac_hotspot_8u422b05.tar.gz" -o java8-mac.tar.gz
+          mkdir -p java/mac-x64/java8
+          tar -xzf java8-mac.tar.gz -C java/mac-x64/
+          mv java/mac-x64/jdk8u422-b05-jre/* java/mac-x64/java8/
+          rm -rf java/mac-x64/jdk8u422-b05-jre java8-mac.tar.gz
+          
+          # Java 21 macOS
+          echo "Downloading Java 21 for macOS..."
+          curl -L "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_mac_hotspot_21.0.4_7.tar.gz" -o java21-mac.tar.gz
+          mkdir -p java/mac-x64/java21
+          tar -xzf java21-mac.tar.gz -C java/mac-x64/
+          mv java/mac-x64/jdk-21.0.4+7-jre/* java/mac-x64/java21/
+          rm -rf java/mac-x64/jdk-21.0.4+7-jre java21-mac.tar.gz
+        fi
+        
+        echo "Platform-specific Java download completed"
+
+    - name: Download Minecraft Assets
+      shell: bash
+      run: |
+        echo "Downloading Minecraft core assets..."
+        mkdir -p assets/minecraft/versions/1.21.1
+        
+        # Download version manifest
+        curl -L "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json" -o assets/minecraft/version_manifest.json
+        
+        # Download Minecraft 1.21.1 version info
+        curl -L "https://piston-data.mojang.com/v1/objects/4707d00eb834b446575d89a61a11b5d548d8c001/1.21.1.json" -o assets/minecraft/versions/1.21.1/1.21.1.json
+        
+        # Download Fabric loader info
+        mkdir -p assets/fabric
+        curl -L "https://meta.fabricmc.net/v2/versions/loader" -o assets/fabric/loader-versions.json
+        curl -L "https://meta.fabricmc.net/v2/versions/installer" -o assets/fabric/installer-versions.json
+        
+        # Create assets manifest
+        mkdir -p assets/manifests
+        echo '{"minecraft": "1.21.1", "fabric": "latest", "java8": "1.8.0_422", "java21": "21.0.4"}' > assets/manifests/assets.json
+        
+        echo "Asset download completed"
+
+    - name: Verify Downloaded Assets
+      shell: bash
+      run: |
+        echo "Verifying downloaded Java runtimes and assets..."
+        
+        # Verify Java runtimes for current platform
+        if [ "${{ matrix.platform }}" = "win" ]; then
+          echo "Verifying Windows Java runtimes..."
           if [ -f "java/windows-x64/java8/bin/java.exe" ]; then
-            echo "✓ Java 8 Windows runtime found"
+            echo "✓ Java 8 Windows runtime verified"
+            java/windows-x64/java8/bin/java.exe -version
           else
             echo "✗ Java 8 Windows runtime missing"
             exit 1
           fi
           if [ -f "java/windows-x64/java21/bin/java.exe" ]; then
-            echo "✓ Java 21 Windows runtime found"
+            echo "✓ Java 21 Windows runtime verified"
+            java/windows-x64/java21/bin/java.exe -version
           else
-            echo "✗ Java 21 Windows runtime missing"
+            echo "✗ Java 21 Windows runtime missing" 
             exit 1
           fi
           
         elif [ "${{ matrix.platform }}" = "linux" ]; then
-          echo "Checking Linux Java runtimes..."
+          echo "Verifying Linux Java runtimes..."
           if [ -f "java/linux-x64/java8/bin/java" ]; then
-            echo "✓ Java 8 Linux runtime found"
+            echo "✓ Java 8 Linux runtime verified"
+            java/linux-x64/java8/bin/java -version
           else
             echo "✗ Java 8 Linux runtime missing"
             exit 1
           fi
           if [ -f "java/linux-x64/java21/bin/java" ]; then
-            echo "✓ Java 21 Linux runtime found"
+            echo "✓ Java 21 Linux runtime verified"
+            java/linux-x64/java21/bin/java -version
           else
             echo "✗ Java 21 Linux runtime missing"
             exit 1
           fi
           
         elif [ "${{ matrix.platform }}" = "mac" ]; then
-          echo "Checking macOS Java runtimes..."
+          echo "Verifying macOS Java runtimes..."
           if [ -f "java/mac-x64/java8/Contents/Home/bin/java" ]; then
-            echo "✓ Java 8 macOS runtime found"
+            echo "✓ Java 8 macOS runtime verified"
+            java/mac-x64/java8/Contents/Home/bin/java -version
           else
             echo "✗ Java 8 macOS runtime missing"
             exit 1
           fi
           if [ -f "java/mac-x64/java21/Contents/Home/bin/java" ]; then
-            echo "✓ Java 21 macOS runtime found"
+            echo "✓ Java 21 macOS runtime verified"
+            java/mac-x64/java21/Contents/Home/bin/java -version
           else
             echo "✗ Java 21 macOS runtime missing"
             exit 1
           fi
         fi
         
-        # Check if assets exist
+        # Verify assets
         if [ -f "assets/manifests/assets.json" ]; then
-          echo "✓ Minecraft assets found"
+          echo "✓ Minecraft assets verified"
+          cat assets/manifests/assets.json
         else
           echo "✗ Minecraft assets missing"
           exit 1
         fi
         
         # Display sizes
-        echo "Asset sizes:"
+        echo "=== Final Asset Sizes ==="
         du -sh java/${{ matrix.platform == 'win' && 'windows-x64' || matrix.platform == 'linux' && 'linux-x64' || 'mac-x64' }}/* || true
         du -sh assets/* || true
 
