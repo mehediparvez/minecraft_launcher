@@ -593,13 +593,21 @@
         // Call the Microsoft login process
         const result = await ipcRenderer.invoke('minecraft:login');
         
+        console.log('Microsoft login result:', result);
+        console.log('Profile:', result.profile);
+        console.log('Profile name:', result.profile?.name);
+        
         if (result.success) {
           // Success - open main window with the profile name
           msftLoginBtn.querySelector('.button-text').textContent = 'Success!';
           msftLoginBtn.style.background = '#10b981'; // Green success color
           
+          // Use profile name or fallback to a default
+          const username = result.profile?.name || result.profile?.id || 'DemoPlayer';
+          console.log('Using username for main window:', username);
+          
           setTimeout(() => {
-            ipcRenderer.send('open-second-window', result.profile.name);
+            ipcRenderer.send('open-second-window', username);
           }, 800);
         } else {
           // Check if it's an Xbox profile error

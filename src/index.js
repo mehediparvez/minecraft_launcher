@@ -8,7 +8,38 @@ let loginWindow;
 let mainWindow;
 
 function loadUserConfig() {
-  const configFile = pathManager.get('launcherConfig');
+    ipcMain.handle('debug:getEnv', () => {
+    return {
+      platform: process.platform,
+      arch: process.arch,
+      versions: process.versions,
+      execPath: process.execPath,
+      resourcesPath: process.resourcesPath,
+      appPath: app.getAppPath(),
+      userDataPath: pathManager.getUserDataDir(),
+      minecraftPath: pathManager.get('minecraft'),
+      paths: pathManager.getAll(),
+      tempPath: app.getPath('temp'),
+      isPackaged: app.isPackaged
+    };
+  });
+
+  // Add alias for the handler name that the renderer is actually calling
+  ipcMain.handle('debug:getEnvironmentInfo', () => {
+    return {
+      platform: process.platform,
+      arch: process.arch,
+      versions: process.versions,
+      execPath: process.execPath,
+      resourcesPath: process.resourcesPath,
+      appPath: app.getAppPath(),
+      userDataPath: pathManager.getUserDataDir(),
+      minecraftPath: pathManager.get('minecraft'),
+      paths: pathManager.getAll(),
+      tempPath: app.getPath('temp'),
+      isPackaged: app.isPackaged
+    };
+  });e = pathManager.get('launcherConfig');
   
   try {
     if (fs.existsSync(configFile)) {
@@ -245,11 +276,18 @@ app.whenReady().then(async () => {
   
   ipcMain.on('open-second-window', (event, userNick) => {
     console.log('open-second-window event received with username:', userNick);
+    console.log('Username type:', typeof userNick);
+    console.log('Username value:', JSON.stringify(userNick));
+    
+    // Fallback to a default name if username is undefined/null/empty
+    const finalUsername = userNick || 'Player';
+    console.log('Using final username:', finalUsername);
+    
     if (loginWindow) {
       loginWindow.close();
       loginWindow = null;
     }
-    createMainWindow(userNick);
+    createMainWindow(finalUsername);
   });
   ipcMain.on('show-login-window', () => {
     if (mainWindow) {
@@ -294,7 +332,7 @@ app.whenReady().then(async () => {
     createDebugWindow();
   });
   
-  ipcMain.handle('debug:getEnv', () => {
+  ipcMain.handle('debug:getEnvironmentInfo', () => {
     return {
       platform: process.platform,
       arch: process.arch,
@@ -308,6 +346,22 @@ app.whenReady().then(async () => {
       tempPath: app.getPath('temp'),
       isPackaged: app.isPackaged
     };
+  });
+
+  // Handle user logout
+  ipcMain.on('logout-user', () => {
+    // Clear any authentication state
+    // This will reset the UI to login screen
+    if (mainWindow) {
+      mainWindow.webContents.executeJavaScript(`
+        // Reset UI to login state
+        if (typeof resetToLoginUI === 'function') {
+          resetToLoginUI();
+        } else {
+          location.reload();
+        }
+      `);
+    }
   });
   
   ipcMain.handle('debug:testLogin', async (event, username) => {
@@ -462,11 +516,6 @@ app.on('window-all-closed', () => {
 
 // Clean up when quitting
 app.on('will-quit', () => {
-  // Clean up setup manager
-  if (setupManager) {
-    setupManager.cleanup();
-  }
-  
   // Unregister all shortcuts
   const { globalShortcut } = require('electron');
   globalShortcut.unregisterAll();

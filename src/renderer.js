@@ -198,20 +198,24 @@ async function loadUserSkin(username) {
   
   try {
     console.log('Loading skin for user:', username);
+    
+    // Always show loading initially
     skinLoading.style.display = 'flex';
     skinImage.style.display = 'none';
     
     // For offline users, immediately use the default skin
     if (username.startsWith('offline:') || currentUserNick.startsWith('offline:')) {
       console.log('Using default skin for offline user');
-      const defaultSkinUrl = `https://crafatar.com/avatars/steve?size=64&overlay`;
-      skinImage.src = defaultSkinUrl;
-      skinImage.style.display = 'block';
-      skinLoading.style.display = 'none';
-      
-      if (userAvatar) {
-        userAvatar.classList.remove('no-user');
-      }
+      setTimeout(() => {
+        const defaultSkinUrl = `https://crafatar.com/avatars/steve?size=64&overlay`;
+        skinImage.src = defaultSkinUrl;
+        skinImage.style.display = 'block';
+        skinLoading.style.display = 'none';
+        
+        if (userAvatar) {
+          userAvatar.classList.remove('no-user');
+        }
+      }, 500); // Small delay to show loading state
       return;
     }
     
@@ -1697,6 +1701,7 @@ async function initializeApp() {
   // Verificar usuario guardado
   const hasUser = checkSavedUser();
   setupLogoutButton();
+  setupUserAvatarDropdown();
   
   // Copiar archivos iniciales ANTES de que el usuario interactúe
   try {
@@ -1823,3 +1828,58 @@ document.addEventListener('DOMContentLoaded', () => {
   // Then initialize the app
   initializeApp();
 });
+
+// User Avatar Dropdown functionality
+function setupUserAvatarDropdown() {
+  const userAvatar = document.querySelector('.user-avatar');
+  const userDropdown = document.getElementById('user-dropdown');
+  const logoutOption = document.getElementById('logout-option');
+  
+  if (!userAvatar || !userDropdown || !logoutOption) {
+    console.log('User avatar dropdown elements not found');
+    return;
+  }
+  
+  // Toggle dropdown on avatar click
+  userAvatar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = userDropdown.style.display === 'block';
+    userDropdown.style.display = isVisible ? 'none' : 'block';
+  });
+  
+  // Handle logout
+  logoutOption.addEventListener('click', () => {
+    userDropdown.style.display = 'none';
+    ipcRenderer.send('logout-user');
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!userAvatar.contains(e.target)) {
+      userDropdown.style.display = 'none';
+    }
+  });
+}
+
+// Reset UI to login state after logout
+function resetToLoginUI() {
+  // Hide main content and show login
+  const loginContainer = document.querySelector('.login-container');
+  const mainContainer = document.querySelector('.container .main-content');
+  
+  if (loginContainer && mainContainer) {
+    loginContainer.style.display = 'flex';
+    mainContainer.style.display = 'none';
+    
+    // Clear any stored user data
+    sessionStorage.clear();
+    
+    // Reset form if needed
+    const usernameInput = document.getElementById('usernameInput');
+    if (usernameInput) {
+      usernameInput.value = '';
+    }
+    
+    console.log('User logged out successfully');
+  }
+}
