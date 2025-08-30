@@ -47,6 +47,9 @@
       "!dev-resources${/*}",
       "!dev-workspace${/*}",
       "!java${/*}",
+      "minecraft/launcher_config.json",
+      "minecraft/log4j2_17-111.xml", 
+      "minecraft/troubleshooting.txt",
       "!minecraft/assets${/*}",
       "!minecraft/libraries${/*}",
       "!minecraft/versions${/*}",
@@ -68,7 +71,19 @@
         }
       ],
       "requestedExecutionLevel": "asInvoker",
-      "publisherName": "Void Client Team"
+      "publisherName": "Void Client Team",
+      "extraResources": [
+        {
+          "from": "java/windows-x64/",
+          "to": "java/",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "assets/",
+          "to": "assets/",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "mac": {
       "target": [
@@ -80,7 +95,19 @@
           ]
         }
       ],
-      "category": "public.app-category.games"
+      "category": "public.app-category.games",
+      "extraResources": [
+        {
+          "from": "java/mac-x64/",
+          "to": "java/",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "assets/",
+          "to": "assets/",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "linux": {
       "target": [
@@ -103,7 +130,19 @@
         "Name": "Void Client",
         "Comment": "Minecraft launcher with Microsoft authentication",
         "Categories": "Game;ActionGame;"
-      }
+      },
+      "extraResources": [
+        {
+          "from": "java/linux-x64/",
+          "to": "java/",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "assets/",
+          "to": "assets/",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,

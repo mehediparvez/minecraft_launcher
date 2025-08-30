@@ -6,12 +6,13 @@ const { app } = require('electron');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
 const streamPipeline = promisify(pipeline);
+const pathManager = require('./path-manager');
 
 class AssetDownloader {
     constructor() {
-        this.baseDir = path.join(app.getPath('userData'), 'minecraft');
+        this.baseDir = pathManager.get('minecraft');
         // Portable Java installation in launcher's data directory
-        this.javaDir = path.join(app.getPath('userData'), 'java');
+        this.javaDir = pathManager.get('java');
         this.downloadQueue = [];
         this.isDownloading = false;
         this.progressCallback = null;
@@ -155,9 +156,26 @@ class AssetDownloader {
     
     // Get the executable path for a Java version
     getJavaExecutablePath(javaVersion) {
+        // First check if bundled Java exists
+        let bundledPath;
+        if (process.resourcesPath && !process.resourcesPath.includes('node_modules')) {
+            bundledPath = path.join(process.resourcesPath, 'java', javaVersion);
+        } else {
+            bundledPath = path.join(__dirname, '..', 'java', javaVersion);
+        }
+        
+        const javaExe = process.platform === 'win32' ? 'javaw.exe' : 'java';
+        const bundledJavaExecutable = path.join(bundledPath, 'bin', javaExe);
+        
+        // If bundled Java exists, use that
+        if (fs.existsSync(bundledJavaExecutable)) {
+            console.log(`Using bundled Java: ${bundledJavaExecutable}`);
+            return bundledJavaExecutable;
+        }
+        
+        // Otherwise use downloaded/installed Java
         const javaInstallDir = path.join(this.javaDir, javaVersion);
         const binDir = path.join(javaInstallDir, 'bin');
-        const javaExe = process.platform === 'win32' ? 'javaw.exe' : 'java';
         
         return path.join(binDir, javaExe);
     }
@@ -203,9 +221,13 @@ class AssetDownloader {
 
     // Check if essential components are downloaded
     async checkInstallationComplete() {
+        // Check for bundled Java first
+        const bundledJava8 = await this.checkBundledJava('java8');
+        const bundledJava21 = await this.checkBundledJava('java21');
+        
         const checks = {
-            java8: await this.checkJavaInstalled(path.join(this.javaDir, 'java8'), '8'),
-            java21: await this.checkJavaInstalled(path.join(this.javaDir, 'java21'), '21'),
+            java8: bundledJava8 || await this.checkJavaInstalled(path.join(this.javaDir, 'java8'), '8'),
+            java21: bundledJava21 || await this.checkJavaInstalled(path.join(this.javaDir, 'java21'), '21'),
             minecraftCore: this.checkMinecraftCoreFiles(),
             fabricLoader: this.checkFabricLoader()
         };
@@ -214,6 +236,31 @@ class AssetDownloader {
             isComplete: Object.values(checks).every(check => check),
             components: checks
         };
+    }
+
+    // Check for bundled Java in the application directory
+    async checkBundledJava(version) {
+        // In development, check relative to source directory
+        // In production, check in app resources
+        let bundledPath;
+        if (process.resourcesPath && !process.resourcesPath.includes('node_modules')) {
+            // Production - Java is bundled in resources
+            bundledPath = path.join(process.resourcesPath, 'java', version);
+        } else {
+            // Development - check relative path
+            bundledPath = path.join(__dirname, '..', 'java', version);
+        }
+        
+        const executableName = process.platform === 'win32' ? 'javaw.exe' : 'java';
+        const javaExecutable = path.join(bundledPath, 'bin', executableName);
+        
+        const exists = fs.existsSync(javaExecutable);
+        if (exists) {
+            console.log(`✅ Found bundled ${version} at: ${bundledPath}`);
+        } else {
+            console.log(`❌ Bundled ${version} not found at: ${bundledPath}`);
+        }
+        return exists;
     }
 
     // Download all missing components
@@ -423,6 +470,23 @@ class AssetDownloader {
     }
 
     checkMinecraftCoreFiles() {
+        // First check for bundled assets
+        let bundledPath;
+        if (process.resourcesPath && !process.resourcesPath.includes('node_modules')) {
+            bundledPath = path.join(process.resourcesPath, 'assets', 'minecraft', 'versions', '1.21.1');
+        } else {
+            bundledPath = path.join(__dirname, '..', 'assets', 'minecraft', 'versions', '1.21.1');
+        }
+        
+        const bundledJar = path.join(bundledPath, '1.21.1.jar');
+        const bundledJson = path.join(bundledPath, '1.21.1.json');
+        
+        if (fs.existsSync(bundledJar) && fs.existsSync(bundledJson)) {
+            console.log('✅ Found bundled Minecraft core files');
+            return true;
+        }
+        
+        // Fallback to downloaded files
         const versionsDir = path.join(this.baseDir, 'versions');
         return fs.existsSync(versionsDir) && fs.readdirSync(versionsDir).length > 0;
     }
@@ -442,8 +506,24 @@ class AssetDownloader {
     }
 
     checkFabricLoader() {
+        // First check for bundled Fabric
+        let bundledPath;
+        if (process.resourcesPath && !process.resourcesPath.includes('node_modules')) {
+            bundledPath = path.join(process.resourcesPath, 'assets', 'fabric');
+        } else {
+            bundledPath = path.join(__dirname, '..', 'assets', 'fabric');
+        }
+        
+        const bundledFabric = path.join(bundledPath, 'fabric-installer.jar');
+        
+        if (fs.existsSync(bundledFabric)) {
+            console.log('✅ Found bundled Fabric loader');
+            return true;
+        }
+        
+        // Fallback to downloaded files
         const fabricDir = path.join(this.baseDir, 'fabric');
-        return fs.existsSync(fabricDir);
+        return fs.existsSync(fabricDir) && fs.readdirSync(fabricDir).length > 0;
     }
 
     // Download essential Minecraft files only when needed

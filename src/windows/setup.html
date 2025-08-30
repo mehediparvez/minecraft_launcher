@@ -197,6 +197,7 @@
                 These components will be downloaded to your user data directory and only need to be downloaded once.
             </p>
             <button class="btn" onclick="startSetup()">Start Download</button>
+            <button class="btn btn-secondary" onclick="skipSetup()">Skip Setup</button>
             <button class="btn btn-secondary" onclick="window.close()">Cancel</button>
         </div>
 
@@ -272,6 +273,21 @@
 
         async function completeSetup() {
             await ipcRenderer.invoke('setup:complete');
+        }
+
+        async function skipSetup() {
+            const confirmSkip = confirm(
+                'Are you sure you want to skip setup?\n\n' +
+                'Void Client may not work properly without these components:\n' +
+                '• Java Runtime (required for Minecraft)\n' +
+                '• Minecraft Core Files\n' +
+                '• Fabric Loader\n\n' +
+                'You can run setup later from the launcher menu.'
+            );
+            
+            if (confirmSkip) {
+                await ipcRenderer.invoke('setup:skip');
+            }
         }
 
         function retrySetup() {

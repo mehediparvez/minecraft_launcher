@@ -2,14 +2,13 @@ const { app, BrowserWindow, ipcMain, Menu, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { minecraftAuth } = require('./auth');
-const SetupManager = require('./setup-manager');
+const pathManager = require('./path-manager');
 
 let loginWindow;
 let mainWindow;
-let setupManager;
 
 function loadUserConfig() {
-  const configFile = path.join('./minecraft', 'launcher_config.json');
+  const configFile = pathManager.get('launcherConfig');
   
   try {
     if (fs.existsSync(configFile)) {
@@ -213,17 +212,9 @@ app.whenReady().then(async () => {
     app.setDesktopName('void-client.desktop');
   }
   
-  // Initialize setup manager
-  setupManager = new SetupManager();
-  
-  // Check if initial setup is required
-  const setupRequired = await setupManager.checkSetupRequired();
-  
-  if (setupRequired) {
-    // Show setup window and wait for completion
-    await setupManager.showSetupWindow();
-    await setupManager.waitForSetupCompletion();
-  }
+  // Initialize path manager and ensure directories exist
+  await pathManager.initialize();
+  console.log('Path manager initialized:', pathManager.getPathInfo());
   
   // Initialize Microsoft Auth
   await minecraftAuth.init();
@@ -311,7 +302,9 @@ app.whenReady().then(async () => {
       execPath: process.execPath,
       resourcesPath: process.resourcesPath,
       appPath: app.getAppPath(),
-      userDataPath: app.getPath('userData'),
+      userDataPath: pathManager.getUserDataDir(),
+      minecraftPath: pathManager.get('minecraft'),
+      paths: pathManager.getAll(),
       tempPath: app.getPath('temp'),
       isPackaged: app.isPackaged
     };

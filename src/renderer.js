@@ -19,6 +19,30 @@ try {
   };
 }
 
+// Global path configuration - will be loaded from main process
+let appPaths = {
+  minecraft: './minecraft',
+  mods: './minecraft/mods',
+  versions: './minecraft/versions',
+  launcherConfig: './minecraft/launcher_config.json'
+};
+
+// Load paths from main process
+async function initializePaths() {
+  try {
+    const envInfo = await ipcRenderer.invoke('debug:getEnvironmentInfo');
+    if (envInfo && envInfo.paths) {
+      appPaths = envInfo.paths;
+      console.log('Paths loaded from main process:', appPaths);
+    }
+  } catch (error) {
+    console.warn('Failed to load paths from main process, using defaults:', error);
+  }
+}
+
+// Initialize paths when renderer loads
+initializePaths();
+
 const Launcher = new Client();
 const NAMESPACE = uuidv3.DNS;
 
@@ -51,9 +75,9 @@ function getVersionModsFolder(version) {
 
 // Función para cambiar mods según la versión
 function switchModsForVersion(version) {
-  const modsDir = './minecraft/mods';
+  const modsDir = appPaths.mods;
   const versionFolder = getVersionModsFolder(version);
-  const versionModsPath = path.join('./minecraft/mods', versionFolder);
+  const versionModsPath = path.join(appPaths.mods, versionFolder);
   
   try {
     // Crear directorios si no existen

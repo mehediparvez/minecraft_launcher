@@ -12,12 +12,34 @@ class SetupManager {
         this.downloader = new AssetDownloader();
         this.isSetupComplete = false;
         this.testMode = process.env.NODE_ENV === 'testing';
+        
+        // Always register IPC handlers
+        this.setupIpcHandlers();
     }
 
     async checkSetupRequired() {
+        // Check if setup is required by examining what's already available
         const status = await this.downloader.checkInstallationComplete();
+        
+        // If all components are bundled, no setup needed
+        if (status.components.java8 && status.components.java21 && 
+            status.components.minecraftCore && status.components.fabricLoader) {
+            console.log('✅ All components bundled - skipping setup entirely');
+            this.isSetupComplete = true;
+            return false;
+        }
+        
         this.isSetupComplete = status.isComplete;
         return !status.isComplete;
+    }
+
+    async checkBundledJava() {
+        const pathManager = require('./path-manager');
+        const bundledJava8 = path.join(__dirname, '..', 'java', 'java8');
+        const bundledJava21 = path.join(__dirname, '..', 'java', 'java21');
+        
+        const fs = require('fs');
+        return fs.existsSync(bundledJava8) || fs.existsSync(bundledJava21);
     }
 
     async showSetupWindow() {
@@ -30,8 +52,6 @@ class SetupManager {
             width: 600,
             height: 450,
             resizable: false,
-            minimizable: false,
-            maximizable: false,
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false
@@ -51,15 +71,37 @@ class SetupManager {
             this.setupWindow = null;
         });
 
-        // Prevent closing during setup
+        // Allow closing during setup with confirmation
         this.setupWindow.on('close', (event) => {
             if (!this.isSetupComplete) {
                 event.preventDefault();
-                // Could show a warning dialog here
+                
+                // Show confirmation dialog
+                const { dialog } = require('electron');
+                const choice = dialog.showMessageBoxSync(this.setupWindow, {
+                    type: 'question',
+                    buttons: ['Quit Application', 'Continue Setup', 'Cancel'],
+                    defaultId: 1,
+                    title: 'Setup Incomplete',
+                    message: 'Setup is not complete',
+                    detail: 'Void Client requires these components to function properly. You can:\n\n• Quit now and run setup later\n• Continue with the setup process\n• Cancel and keep the setup window open'
+                });
+
+                if (choice === 0) {
+                    // User chose to quit
+                    this.isSetupComplete = true; // Prevent infinite loop
+                    require('electron').app.quit();
+                } else if (choice === 1) {
+                    // User chose to continue setup - do nothing (keep window open)
+                    return;
+                } else {
+                    // User chose cancel - do nothing (keep window open)
+                    return;
+                }
             }
         });
 
-        this.setupIpcHandlers();
+        // IPC handlers are already set up in constructor
     }
 
     setupIpcHandlers() {
@@ -134,6 +176,16 @@ class SetupManager {
             return { success: true };
         });
 
+        // Handle setup skip
+        ipcMain.handle('setup:skip', async () => {
+            console.log('User chose to skip setup');
+            this.isSetupComplete = true;
+            if (this.setupWindow) {
+                this.setupWindow.close();
+            }
+            return { success: true };
+        });
+
         // Handle setup status check
         ipcMain.handle('setup:status', async () => {
             const status = await this.downloader.checkInstallationComplete();
@@ -189,6 +241,7 @@ class SetupManager {
         ipcMain.removeAllListeners('setup:start');
         ipcMain.removeAllListeners('setup:download');
         ipcMain.removeAllListeners('setup:complete');
+        ipcMain.removeAllListeners('setup:skip');
         ipcMain.removeAllListeners('setup:status');
     }
 }
