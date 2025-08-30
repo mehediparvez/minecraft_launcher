@@ -54,7 +54,7 @@
       "!installer-config.json",
       "!java${/*}",
       "minecraft/launcher_config.json",
-      "minecraft/log4j2_17-111.xml", 
+      "minecraft/log4j2_17-111.xml",
       "minecraft/troubleshooting.txt",
       "!minecraft/assets${/*}",
       "!minecraft/libraries${/*}",
@@ -82,12 +82,16 @@
         {
           "from": "java/windows-x64/",
           "to": "java/",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         },
         {
           "from": "assets/",
           "to": "assets/",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         }
       ]
     },
@@ -106,12 +110,16 @@
         {
           "from": "java/mac-x64/",
           "to": "java/",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         },
         {
           "from": "assets/",
           "to": "assets/",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         }
       ]
     },
@@ -141,12 +149,16 @@
         {
           "from": "java/linux-x64/",
           "to": "java/",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         },
         {
           "from": "assets/",
           "to": "assets/",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         }
       ]
     },
@@ -173,7 +185,7 @@
   "dependencies": {
     "@azure/msal-node": "^3.7.2",
     "keytar": "^7.9.0",
-    "minecraft-launcher-core": "^3.16.18",
+    "minecraft-launcher-core": "^3.18.2",
     "node-fetch": "^2.6.7",
     "tar": "^7.4.3",
     "uuid": "^11.1.0",

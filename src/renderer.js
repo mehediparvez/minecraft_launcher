@@ -8,7 +8,23 @@ const { setTimeout } = require('timers');
 // Fix auth import with proper path resolution
 let launcherIntegration;
 try {
-  const authModule = require('./auth');
+  // Try multiple possible paths for auth module
+  let authModule;
+  try {
+    authModule = require('./auth');
+  } catch (e1) {
+    try {
+      authModule = require('../auth');
+    } catch (e2) {
+      try {
+        const path = require('path');
+        const authPath = path.join(__dirname, '..', 'auth');
+        authModule = require(authPath);
+      } catch (e3) {
+        throw new Error(`All auth module paths failed: ${e1.message}, ${e2.message}, ${e3.message}`);
+      }
+    }
+  }
   launcherIntegration = authModule.launcherIntegration;
   console.log('✅ Auth module loaded successfully');
 } catch (e) {
