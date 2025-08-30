@@ -99,7 +99,12 @@ jobs:
           curl -L "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u422-b05/OpenJDK8U-jre_x64_mac_hotspot_8u422b05.tar.gz" -o java8-mac.tar.gz
           mkdir -p java/mac-x64/java8
           tar -xzf java8-mac.tar.gz -C java/mac-x64/
-          mv java/mac-x64/jdk8u422-b05-jre/* java/mac-x64/java8/
+          # macOS Java has Contents/Home structure, so we need to handle it properly
+          if [ -d "java/mac-x64/jdk8u422-b05-jre/Contents/Home" ]; then
+            mv java/mac-x64/jdk8u422-b05-jre/Contents/Home/* java/mac-x64/java8/
+          else
+            mv java/mac-x64/jdk8u422-b05-jre/* java/mac-x64/java8/
+          fi
           rm -rf java/mac-x64/jdk8u422-b05-jre java8-mac.tar.gz
           
           # Java 21 macOS
@@ -107,7 +112,12 @@ jobs:
           curl -L "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jre_x64_mac_hotspot_21.0.4_7.tar.gz" -o java21-mac.tar.gz
           mkdir -p java/mac-x64/java21
           tar -xzf java21-mac.tar.gz -C java/mac-x64/
-          mv java/mac-x64/jdk-21.0.4+7-jre/* java/mac-x64/java21/
+          # macOS Java has Contents/Home structure, so we need to handle it properly
+          if [ -d "java/mac-x64/jdk-21.0.4+7-jre/Contents/Home" ]; then
+            mv java/mac-x64/jdk-21.0.4+7-jre/Contents/Home/* java/mac-x64/java21/
+          else
+            mv java/mac-x64/jdk-21.0.4+7-jre/* java/mac-x64/java21/
+          fi
           rm -rf java/mac-x64/jdk-21.0.4+7-jre java21-mac.tar.gz
         fi
         
@@ -135,6 +145,31 @@ jobs:
         echo '{"minecraft": "1.21.1", "fabric": "latest", "java8": "1.8.0_422", "java21": "21.0.4"}' > assets/manifests/assets.json
         
         echo "Asset download completed"
+
+    - name: Debug Java Structure Before Build
+      shell: bash
+      run: |
+        echo "=== Debug: Java Structure Before Build ==="
+        echo "Current directory: $(pwd)"
+        echo "Platform: ${{ matrix.platform }}"
+        
+        # Show the structure we created
+        if [ "${{ matrix.platform }}" = "win" ]; then
+          echo "Windows Java structure:"
+          find java/windows-x64 -type f -name "java*" | head -10
+          ls -la java/windows-x64/java8/bin/ || echo "java8/bin not found"
+          ls -la java/windows-x64/java21/bin/ || echo "java21/bin not found"
+        elif [ "${{ matrix.platform }}" = "linux" ]; then
+          echo "Linux Java structure:"
+          find java/linux-x64 -type f -name "java*" | head -10
+          ls -la java/linux-x64/java8/bin/ || echo "java8/bin not found"
+          ls -la java/linux-x64/java21/bin/ || echo "java21/bin not found"
+        elif [ "${{ matrix.platform }}" = "mac" ]; then
+          echo "macOS Java structure:"
+          find java/mac-x64 -type f -name "java*" | head -10
+          ls -la java/mac-x64/java8/bin/ || echo "java8/bin not found" 
+          ls -la java/mac-x64/java21/bin/ || echo "java21/bin not found"
+        fi
 
     - name: Verify Downloaded Assets
       shell: bash
@@ -178,18 +213,22 @@ jobs:
           
         elif [ "${{ matrix.platform }}" = "mac" ]; then
           echo "Verifying macOS Java runtimes..."
-          if [ -f "java/mac-x64/java8/Contents/Home/bin/java" ]; then
+          if [ -f "java/mac-x64/java8/bin/java" ]; then
             echo "✓ Java 8 macOS runtime verified"
-            java/mac-x64/java8/Contents/Home/bin/java -version
+            java/mac-x64/java8/bin/java -version
           else
             echo "✗ Java 8 macOS runtime missing"
+            echo "Contents of java/mac-x64/java8/:"
+            ls -la java/mac-x64/java8/ || echo "Directory not found"
             exit 1
           fi
-          if [ -f "java/mac-x64/java21/Contents/Home/bin/java" ]; then
+          if [ -f "java/mac-x64/java21/bin/java" ]; then
             echo "✓ Java 21 macOS runtime verified"
-            java/mac-x64/java21/Contents/Home/bin/java -version
+            java/mac-x64/java21/bin/java -version
           else
             echo "✗ Java 21 macOS runtime missing"
+            echo "Contents of java/mac-x64/java21/:"
+            ls -la java/mac-x64/java21/ || echo "Directory not found"
             exit 1
           fi
         fi
@@ -236,6 +275,27 @@ jobs:
         npm run dist:mac -- --publish=never
         echo "Build completed for macOS"
         ls -la dist/
+
+    - name: Debug Final Package Structure
+      if: always()
+      shell: bash
+      run: |
+        echo "=== Debug: Final Package Structure ==="
+        echo "Contents of dist folder:"
+        find dist -name "*" -type f | head -20 || echo "No dist folder"
+        
+        # Try to examine the built package to see if Java is included
+        if [ "${{ matrix.platform }}" = "win" ]; then
+          echo "Looking for Windows executable structure..."
+          find dist -name "*.exe" | head -5
+        elif [ "${{ matrix.platform }}" = "linux" ]; then
+          echo "Looking for Linux package structure..."
+          find dist -name "*.AppImage" | head -5
+          find dist -name "*.deb" | head -5
+        elif [ "${{ matrix.platform }}" = "mac" ]; then
+          echo "Looking for macOS package structure..."
+          find dist -name "*.dmg" | head -5
+        fi
 
     - name: Copy Artifacts to Release Directory
       shell: bash

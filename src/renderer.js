@@ -80,6 +80,51 @@ async function initializePaths() {
       event.preventDefault();
       console.clear();
     }
+    
+    // Ctrl+Shift+P (debug paths) - helpful for production debugging
+    if (event.ctrlKey && event.shiftKey && event.key === 'P') {
+      event.preventDefault();
+      console.log('🔍 DEBUG PATHS INFO:');
+      console.log('Process info:', {
+        platform: process.platform,
+        cwd: process.cwd(),
+        resourcesPath: process.resourcesPath,
+        dirname: __dirname,
+        isPackaged: process.resourcesPath !== undefined
+      });
+      
+      // Check what paths exist
+      const pathsToCheck = [
+        process.resourcesPath ? path.join(process.resourcesPath, 'java') : null,
+        path.join(process.cwd(), 'java'),
+        path.join(__dirname, '..', 'java')
+      ].filter(Boolean);
+      
+      pathsToCheck.forEach(javaPath => {
+        console.log(`Checking path: ${javaPath}`);
+        if (fs.existsSync(javaPath)) {
+          console.log(`  ✅ EXISTS - Contents:`, fs.readdirSync(javaPath));
+          
+          // Check java8 and java21 subdirectories
+          ['java8', 'java21'].forEach(javaVersion => {
+            const javaVersionPath = path.join(javaPath, javaVersion);
+            if (fs.existsSync(javaVersionPath)) {
+              console.log(`    ✅ ${javaVersion} EXISTS`);
+              const binPath = path.join(javaVersionPath, 'bin');
+              if (fs.existsSync(binPath)) {
+                console.log(`      ✅ bin/ EXISTS - Contents:`, fs.readdirSync(binPath).slice(0, 5));
+              } else {
+                console.log(`      ❌ bin/ NOT FOUND`);
+              }
+            } else {
+              console.log(`    ❌ ${javaVersion} NOT FOUND`);
+            }
+          });
+        } else {
+          console.log(`  ❌ NOT FOUND`);
+        }
+      });
+    }
   });const Launcher = new Client();
 const NAMESPACE = uuidv3.DNS;
 
@@ -502,22 +547,29 @@ function setupLogoutButton() {
 
 function getJavaPath(minecraftVersion) {
   console.log('Getting Java path for platform:', process.platform);
+  console.log('Process info:', {
+    cwd: process.cwd(),
+    resourcesPath: process.resourcesPath,
+    dirname: __dirname,
+    isPackaged: process.resourcesPath !== undefined
+  });
   
   // Try multiple Java locations in order of preference
   const javaLocations = [
-    // Current working directory (dev-workspace)
+    // Current working directory (dev-workspace) - for development
     path.join(process.cwd(), 'java', 'java21', 'bin'),
     path.join(process.cwd(), 'java', 'java8', 'bin'),
     
-    // Relative to the main script
+    // Relative to the main script - for development
     path.join(__dirname, '..', 'java', 'java21', 'bin'),
     path.join(__dirname, '..', 'java', 'java8', 'bin'),
     
     // Packaged app locations - extraResources are in resources/ directly
+    // After electron-builder extraResources mapping: java/platform-x64/ -> java/
     path.join(process.resourcesPath, 'java', 'java21', 'bin'),
     path.join(process.resourcesPath, 'java', 'java8', 'bin'),
     
-    // Legacy paths (old locations)
+    // Legacy paths (old locations) - fallback
     path.join(process.resourcesPath, 'app.asar.unpacked', 'java', 'java21', 'bin'),
     path.join(process.resourcesPath, 'app.asar.unpacked', 'java', 'java8', 'bin')
   ];
@@ -532,8 +584,7 @@ function getJavaPath(minecraftVersion) {
   const executableName = process.platform === 'win32' ? 'javaw.exe' : 'java';
   
   console.log(`Looking for Java for ${isLegacyVersion ? 'legacy' : 'modern'} Minecraft version ${minecraftVersion}`);
-  console.log('Current working directory:', process.cwd());
-  console.log('Script directory:', __dirname);
+  console.log('Checking Java locations...');
   
   // Try to find Java in our bundled locations
   for (const javaLocation of javaLocations) {
@@ -546,6 +597,17 @@ function getJavaPath(minecraftVersion) {
       break;
     } else {
       console.log('❌ Java not found at:', potentialJavaPath);
+      
+      // Debug: Show what's actually in this directory
+      const javaBaseDir = path.dirname(javaLocation);
+      if (fs.existsSync(javaBaseDir)) {
+        try {
+          const contents = fs.readdirSync(javaBaseDir);
+          console.log(`   Contents of ${javaBaseDir}:`, contents);
+        } catch (e) {
+          console.log(`   Could not read ${javaBaseDir}:`, e.message);
+        }
+      }
     }
   }
   
