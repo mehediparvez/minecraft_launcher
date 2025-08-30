@@ -1,0 +1,8 @@
+{
+  "enableDebugMode": false,
+  "autoOpenDevTools": false,
+  "showDebugInfo": false,
+  "debugShortcuts": true,
+  "contextMenu": true,
+  "description": "Set enableDebugMode to true to enable debug features in production builds"
+}

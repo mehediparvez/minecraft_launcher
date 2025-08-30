@@ -7,6 +7,35 @@ const pathManager = require('./path-manager');
 let loginWindow;
 let mainWindow;
 
+// Load debug configuration
+function loadDebugConfig() {
+  const debugConfigPath = path.join(__dirname, '..', 'debug-config.json');
+  const devDebugConfigPath = path.join(process.cwd(), 'debug-config.json');
+  
+  // Try both locations - dev workspace and packaged app
+  let configPath = fs.existsSync(devDebugConfigPath) ? devDebugConfigPath : debugConfigPath;
+  
+  try {
+    if (fs.existsSync(configPath)) {
+      const configData = fs.readFileSync(configPath, 'utf8');
+      const config = JSON.parse(configData);
+      console.log('🔧 Debug config loaded from:', configPath, config);
+      return config;
+    }
+  } catch (error) {
+    console.warn('⚠️ Error loading debug config:', error.message);
+  }
+  
+  // Return default config
+  return {
+    enableDebugMode: false,
+    autoOpenDevTools: false,
+    showDebugInfo: false,
+    debugShortcuts: true,
+    contextMenu: true
+  };
+}
+
 function loadUserConfig() {
     ipcMain.handle('debug:getEnv', () => {
     return {
@@ -102,6 +131,9 @@ function createMainWindow(userNick) {
   const iconPath = path.resolve(__dirname, '..', 'build', 'icon.png');
   const fallbackIconPath = path.resolve(__dirname, 'windows/aimg/icon-256.png');
   
+  // Load debug configuration
+  const debugConfig = loadDebugConfig();
+  
   // Use build icon if available, otherwise fallback to local icon
   const finalIconPath = fs.existsSync(iconPath) ? iconPath : fallbackIconPath;
   console.log('Main window using icon path:', finalIconPath);
@@ -112,6 +144,8 @@ function createMainWindow(userNick) {
     webPreferences: {
       contextIsolation: false,
       nodeIntegration: true,
+      // Always enable dev tools (F12 will work in production)
+      devTools: true
     },
     frame: false,
     resizable: false,
@@ -134,13 +168,58 @@ function createMainWindow(userNick) {
   
   mainWindow.loadFile(path.join(__dirname, 'windows/index.html'));
   
-  // Enable developer tools in development
-  if (process.env.NODE_ENV === 'development' || process.argv.includes('--debug')) {
+  // Enable developer tools in development OR production for debugging
+  // Set ENABLE_DEV_TOOLS=true environment variable or use --debug flag to enable in production
+  const enableDevTools = process.env.NODE_ENV === 'development' || 
+                         process.argv.includes('--debug') ||
+                         process.env.ENABLE_DEV_TOOLS === 'true' ||
+                         debugConfig.autoOpenDevTools;
+  
+  if (enableDevTools) {
     mainWindow.webContents.openDevTools();
+    console.log('🔧 Developer tools enabled');
   }
+  
+  // Always enable dev tools toggle for debugging in production
+  // This allows opening dev tools even when they don't auto-open
   
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.webContents.send('set-user', userNick);
+  });
+  
+  // Add right-click context menu for debugging (always available)
+  mainWindow.webContents.on('context-menu', (event, params) => {
+    const { Menu, MenuItem } = require('electron');
+    const contextMenu = new Menu();
+    
+    // Add inspect element option
+    contextMenu.append(new MenuItem({
+      label: 'Inspect Element',
+      click: () => {
+        mainWindow.webContents.inspectElement(params.x, params.y);
+      }
+    }));
+    
+    // Add toggle dev tools option
+    contextMenu.append(new MenuItem({
+      label: 'Toggle Developer Tools',
+      click: () => {
+        mainWindow.webContents.toggleDevTools();
+      }
+    }));
+    
+    // Add separator
+    contextMenu.append(new MenuItem({ type: 'separator' }));
+    
+    // Add reload option
+    contextMenu.append(new MenuItem({
+      label: 'Reload',
+      click: () => {
+        mainWindow.webContents.reload();
+      }
+    }));
+    
+    contextMenu.popup();
   });
   
   mainWindow.on('closed', () => {
@@ -153,10 +232,24 @@ function createMainWindow(userNick) {
     createDebugWindow();
   });
   
-  // Register dev tools shortcut (F12)
+  // Always register F12 for developer tools (works in production too)
   globalShortcut.register('F12', () => {
     if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.toggleDevTools();
+    }
+  });
+  
+  // Register additional debug shortcuts
+  globalShortcut.register('CommandOrControl+Alt+I', () => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.toggleDevTools();
+    }
+  });
+  
+  // Register console clear shortcut
+  globalShortcut.register('CommandOrControl+K', () => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.executeJavaScript('console.clear()');
     }
   });
 }
@@ -319,6 +412,13 @@ app.whenReady().then(async () => {
       mainWindow.close();
     } else if (loginWindow && !loginWindow.isDestroyed()) {
       loginWindow.close();
+    }
+  });
+  
+  ipcMain.on('enable-debug-mode', () => {
+    console.log('🔧 Debug mode enabled via renderer request');
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.openDevTools();
     }
   });
   

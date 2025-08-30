@@ -1046,6 +1046,110 @@ function setupWindowControls() {
       ipcRenderer.send('close-window');
     });
   }
+  
+  // Setup debug enabler - click 5 times quickly to enable debug mode
+  setupDebugEnabler();
+}
+
+function setupDebugEnabler() {
+  const debugEnabler = document.getElementById('debug-enabler');
+  if (!debugEnabler) return;
+  
+  let clickCount = 0;
+  let clickTimeout;
+  
+  debugEnabler.addEventListener('click', () => {
+    clickCount++;
+    
+    // Clear previous timeout
+    if (clickTimeout) {
+      clearTimeout(clickTimeout);
+    }
+    
+    // Show visual feedback
+    debugEnabler.style.opacity = '0.3';
+    setTimeout(() => {
+      debugEnabler.style.opacity = '0';
+    }, 100);
+    
+    if (clickCount >= 5) {
+      console.log('🔧 Debug mode enabled!');
+      
+      // Enable developer tools
+      ipcRenderer.send('enable-debug-mode');
+      
+      // Show notification
+      const statusElement = document.getElementById("status");
+      if (statusElement) {
+        const originalText = statusElement.textContent;
+        statusElement.textContent = '🔧 Debug mode enabled! Press F12 for Developer Tools';
+        statusElement.style.color = '#4CAF50';
+        
+        setTimeout(() => {
+          statusElement.textContent = originalText;
+          statusElement.style.color = '';
+        }, 3000);
+      }
+      
+      // Add debug info overlay
+      addDebugOverlay();
+      
+      clickCount = 0;
+    } else {
+      // Reset click count after 2 seconds
+      clickTimeout = setTimeout(() => {
+        clickCount = 0;
+      }, 2000);
+    }
+  });
+}
+
+function addDebugOverlay() {
+  // Don't add if already exists
+  if (document.getElementById('debug-overlay')) return;
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'debug-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #00ff00;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    z-index: 10000;
+    pointer-events: none;
+    max-width: 300px;
+  `;
+  
+  // Add debug information
+  const debugInfo = [
+    `🔧 DEBUG MODE ACTIVE`,
+    `Platform: ${process.platform}`,
+    `Node: ${process.versions.node}`,
+    `Electron: ${process.versions.electron}`,
+    `Chrome: ${process.versions.chrome}`,
+    `Packaged: ${process.resourcesPath ? 'Yes' : 'No'}`,
+    ``,
+    `Shortcuts:`,
+    `F12 - Toggle DevTools`,
+    `Ctrl+Alt+I - Toggle DevTools`,
+    `Ctrl+K - Clear Console`,
+    `Right-click - Context Menu`
+  ];
+  
+  overlay.innerHTML = debugInfo.join('<br>');
+  document.body.appendChild(overlay);
+  
+  // Auto-hide after 10 seconds
+  setTimeout(() => {
+    if (overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
+    }
+  }, 10000);
 }
 
 function setupLaunchButton() {
